@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="任务7：词向量基础 学习word2vec基础 将用户历史观看电影转为列表数据（一个用户一个列表） 使用gensim训练word2vec，然后对用户完成聚类  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:type" content="article">
+<meta property="og:title" content="推荐系统基础7">
+<meta property="og:url" content="http://guadzilla.github.io/2022/04/27/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%807/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="任务7：词向量基础 学习word2vec基础 将用户历史观看电影转为列表数据（一个用户一个列表） 使用gensim训练word2vec，然后对用户完成聚类  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/aurj300r0x.jpeg">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/39q26nmjqb.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/uqzmaohs5l.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/jikh7horxy.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/rrq9cfy6m9.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/q4sl5f7xlo.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/djmiyovdx5.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/sflnd9gu81.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/78ugqeahim.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/455ulptdh8.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/n01f88stii.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/9sffijf6gc.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/b5dbjph3bi.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/e7v1rjzihf.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/v2vl4bkiqr.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427172027663.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427164950421.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165014070.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165406864.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165450274.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165724232.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165735996.png">
+<meta property="article:published_time" content="2022-04-27T09:03:02.000Z">
+<meta property="article:modified_time" content="2022-04-29T04:23:12.000Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="推荐系统基础">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/aurj300r0x.jpeg">
+
+<link rel="canonical" href="http://guadzilla.github.io/2022/04/27/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%807/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>推荐系统基础7 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/04/27/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%807/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          推荐系统基础7
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-04-27 17:03:02" itemprop="dateCreated datePublished" datetime="2022-04-27T17:03:02+08:00">2022-04-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-04-29 12:23:12" itemprop="dateModified" datetime="2022-04-29T12:23:12+08:00">2022-04-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">推荐系统</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>11k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>27 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h1 id="任务7：词向量基础"><a href="#任务7：词向量基础" class="headerlink" title="任务7：词向量基础"></a>任务7：词向量基础</h1><ul>
+<li>学习<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1486055">word2vec基础</a></li>
+<li>将用户历史观看电影转为列表数据（一个用户一个列表）</li>
+<li>使用gensim训练word2vec，然后对用户完成聚类</li>
+</ul>
+<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<span id="more"></span>
+<h1 id="学习资料"><a href="#学习资料" class="headerlink" title="学习资料"></a>学习资料</h1><p>来源 | Analytics Vidhya 【磐创AI导读】：这篇文章主要介绍了如何使用word2vec构建推荐系统。想要获取更多的机器学习、深度学习资源，欢迎大家点击上方蓝字关注我们的公众号：磐创AI。</p>
+<h2 id="概览"><a href="#概览" class="headerlink" title="概览"></a><strong>概览</strong></h2><ul>
+<li>如今，推荐引擎无处不在，人们希望数据科学家知道如何构建一个推荐引擎</li>
+<li>Word2vec是一个非常流行的词嵌入，用于执行各种NLP任务</li>
+<li>我们将使用word2vec来构建我们自己的推荐系统。就让我们来看看NLP和推荐引擎是如何结合的吧！</li>
+</ul>
+<p>完整的代码可以从这里下载：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/prateekjoshi565/recommendation_system/blob/master/recommender_2.ipynb">https://github.com/prateekjoshi565/recommendation_system/blob/master/recommender_2.ipynb</a></p>
+</blockquote>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="　介绍"></a>　<strong>介绍</strong></h2><p>老实说，你在亚马逊上有注意到网站为你推荐的内容吗（Recommended for you部分)? 自从几年前我发现机器学习可以增强这部分内容以来，我就迷上了它。每次登录Amazon时，我都会密切关注该部分。</p>
+<p>Netflix、谷歌、亚马逊、Flipkart等公司花费数百万美元完善他们的推荐引擎是有原因的，因为这是一个强大的信息获取渠道并且提高了消费者的体验。</p>
+<p>让我用一个最近的例子来说明这种作用。我去了一个很受欢迎的网上市场购买一把躺椅，那里有各种各样的躺椅，我喜欢其中的大多数并点击了查看了一把人造革手动躺椅。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/aurj300r0x.jpeg" alt="img"></p>
+<p>请注意页面上显示的不同类型的信息，图片的左半部分包含了不同角度的商品图片。右半部分包含有关商品的一些详细信息和部分类似的商品。</p>
+<p>而这是我最喜欢的部分，该网站正在向我推荐类似的商品，这为我节省了手动浏览类似躺椅的时间。</p>
+<p>在本文中，我们将构建自己的推荐系统。但是我们将从一个独特的视角来处理这个问题。我们将使用一个NLP概念—Word2vec,向用户推荐商品。如果你觉得这个教程让你有点小期待，那就让我们开始吧！</p>
+<p>在文中，我会提及一些概念。我建议可以看一下以下这两篇文章来快速复习一下</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.analyticsvidhya.com/blog/2017/05/neural-network-from-scratch-in-python-and-r/?utm_source=blog&amp;utm_medium=how-to-build-recommendation-system-word2vec-python">理解神经网络:</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.analyticsvidhya.com/blog/2018/06/comprehensive-guide-recommendation-engine-python/?utm_source=blog&amp;utm_medium=how-to-build-recommendation-system-word2vec-python">构建推荐引擎的综合指南 </a></p>
+</blockquote>
+<h2 id="word2vec-词的向量表示"><a href="#word2vec-词的向量表示" class="headerlink" title="word2vec - 词的向量表示"></a><strong>word2vec - 词的向量表示</strong></h2><p>我们知道机器很难处理原始文本数据。事实上，除了数值型数据，机器几乎不可能处理其他类型的数据。因此，以向量的形式表示文本几乎一直是所有NLP任务中最重要的步骤。</p>
+<p>在这个方向上，最重要的步骤之一就是使用 word2vec embeddings，它是在2013年引入NLP社区的并彻底改变了NLP的整个发展。</p>
+<p>事实证明，这些 embeddings在单词类比和单词相似性等任务中是最先进的。word2vec embeddings还能够实现像 <code>King - man +woman ~= Queen</code>之类的任务，这是一个非常神奇的结果。</p>
+<p>有两种⁠word2vec模型——Continuous Bag of Words模型和Skip-Gram模型。在本文中，我们将使用Skip-Gram模型。</p>
+<p>首先让我们了解word2vec向量或者说embeddings是怎么计算的。</p>
+<h2 id="如何获得word2vec-embeddings"><a href="#如何获得word2vec-embeddings" class="headerlink" title="如何获得word2vec embeddings?"></a><strong>如何获得word2vec embeddings?</strong></h2><p>word2vec模型是一个简单的神经网络模型，其只有一个隐含层，该模型的任务是预测句子中每个词的近义词。然而，我们的目标与这项任务无关。我们想要的是一旦模型被训练好，通过模型的<strong>隐含层学习到的权重</strong>。然后可以将这些权重用作单词的embeddings。</p>
+<p>让我举个例子来说明word2vec模型是如何工作的。请看下面这句话:</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/39q26nmjqb.png" alt="img"></p>
+<p>假设单词“teleport”(用黄色高亮显示)是我们的输入单词。它有一个大小为2的上下文窗口。这意味着我们只考虑输入单词两边相邻的两个单词作为邻近的单词。</p>
+<p><em>注意:上下文窗口的大小不是固定的，可以根据我们的需要进行更改。</em></p>
+<p>现在，任务是逐个选择邻近的单词(上下文窗口中的单词)，并给出词汇表中每个单词成为选中的邻近单词的概率。这听起来应该挺直观的吧？</p>
+<p>让我们再举一个例子来详细了解整个过程。</p>
+<h4 id="准备训练数据"><a href="#准备训练数据" class="headerlink" title="准备训练数据"></a><strong>准备训练数据</strong></h4><p>我们需要一个标记数据集来训练神经网络模型。这意味着数据集应该有一组输入和对应输入的输出。在这一点上，你可能有一些问题，像:</p>
+<ul>
+<li>在哪里可以找到这样的数据集?</li>
+<li>这个数据集包含什么?</li>
+<li>这个数据有多大?</li>
+</ul>
+<p>等等。</p>
+<p>然而我要告诉你的是：我们可以轻松地创建自己的标记数据来训练word2vec模型。下面我将演示如何从任何文本生成此数据集。让我们使用一个句子并从中创建训练数据。</p>
+<p><strong>第一步</strong>: 黄色高亮显示的单词将作为输入，绿色高亮显示的单词将作为输出单词。我们将使用2个单词的窗口大小。让我们从第一个单词作为输入单词开始。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/uqzmaohs5l.png" alt="img"></p>
+<p>所以，关于这个输入词的训练样本如下:</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/jikh7horxy.png" alt="img"></p>
+<p><strong>第二步</strong>: 接下来，我们将第二个单词作为输入单词。上下文窗口也会随之移动。现在，邻近的单词是“we”、“become”和“what”。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/rrq9cfy6m9.png" alt="img"></p>
+<p>新的训练样本将会被添加到之前的训练样本中，如下所示:</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/q4sl5f7xlo.png" alt="img"></p>
+<p>我们将重复这些步骤，直到最后一个单词。最后，这句话的完整训练数据如下:</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/djmiyovdx5.png" alt="img"></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/sflnd9gu81.png" alt="img"></p>
+<p>我们从一个句子中抽取了27个训练样本，这是我喜欢处理非结构化数据的许多方面之一——凭空创建了一个标记数据集。</p>
+<h4 id="获得-word2vec-Embeddings"><a href="#获得-word2vec-Embeddings" class="headerlink" title="获得 word2vec Embeddings"></a><strong>获得 word2vec Embeddings</strong></h4><p>现在，假设我们有一堆句子，我们用同样的方法从这些句子中提取训练样本。我们最终将获得相当大的训练数据。</p>
+<p>假设这个数据集中有5000个惟一的单词，我们希望为每个单词创建大小为100维的向量。然后，对于下面给出的word2vec架构:</p>
+<ul>
+<li>V = 5000(词汇量)</li>
+<li>N = 100(隐藏单元数量或单词embeddings长度)</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/78ugqeahim.png" alt="img"></p>
+<p>输入将是一个<strong>热编码向量</strong>，而输出层将给出词汇表中<strong>每个单词都在其附近的概率</strong>。</p>
+<p>一旦对该模型进行训练，我们就可以很容易地提取学习到的权值矩阵 </p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/455ulptdh8.png" alt="img"></p>
+<p>x N，并用它来提取单词向量:</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/n01f88stii.png" alt="img"></p>
+<p>正如你在上面看到的，权重矩阵的形状为5000 x 100。这个矩阵的第一行对应于词汇表中的第一个单词，第二个对应于第二个单词，以此类推。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/9sffijf6gc.png" alt="img"></p>
+<p>这就是我们如何通过word2vec得到固定大小的词向量或embeddings。这个数据集中相似的单词会有相似的向量，即指向相同方向的向量。例如，单词“car”和“jeep”有类似的向量:</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/b5dbjph3bi.png" alt="img"></p>
+<p>这是对word2vec如何在NLP中使用的高级概述。</p>
+<p>在我们开始构建推荐系统之前，让我问你一个问题。如何将word2vec用于非nlp任务，如商品推荐?我相信自从你读了这篇文章的标题后，你就一直在想这个问题。让我们一起解出这个谜题。</p>
+<h2 id="在非文本数据上应用word2vec模型"><a href="#在非文本数据上应用word2vec模型" class="headerlink" title="在非文本数据上应用word2vec模型"></a><strong>在非文本数据上应用word2vec模型</strong></h2><p>你能猜到word2vec用来创建文本向量表示的自然语言的基本特性吗?</p>
+<p>是<strong>文本的顺序性</strong>。每个句子或短语都有一个单词序列。如果没有这个顺序，我们将很难理解文本。试着解释下面这句话:</p>
+<blockquote>
+<p>“these most been languages deciphered written of have already”</p>
+</blockquote>
+<p>这个句子没有顺序，我们很难理解它，这就是为什么在任何自然语言中，单词的顺序是如此重要。正是这个特性让我想到了其他不像文本具有顺序性质的数据。</p>
+<p>其中一类数据是<strong>消费者在电子商务网站的购买行为</strong>。大多数时候，消费者的购买行为都有一个模式，例如，一个从事体育相关活动的人可能有一个类似的在线购买模式:</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/e7v1rjzihf.png" alt="img"></p>
+<p>如果我们可以用向量表示每一个商品，那么我们可以很容易地找到相似的商品。因此，如果用户在网上查看一个商品，那么我们可以通过使用商品之间的向量相似性评分轻松地推荐类似商品。</p>
+<p>但是我们如何得到这些商品的向量表示呢?我们可以用word2vec模型来得到这些向量吗?</p>
+<p>答案当然是可以的! 把消费者的购买历史想象成一句话，而把商品想象成这句话的单词:</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/v2vl4bkiqr.png" alt="img"></p>
+<p>更进一步，让我们研究在线零售数据，并使用word2vec构建一个推荐系统。</p>
+<h2 id="案例研究-使用Python中的word2vec进行在线商品推荐"><a href="#案例研究-使用Python中的word2vec进行在线商品推荐" class="headerlink" title="案例研究:使用Python中的word2vec进行在线商品推荐"></a><strong>案例研究:使用Python中的word2vec进行在线商品推荐</strong></h2><p>现在让我们再一次确定我们的问题和需求：</p>
+<p>我们被要求创建一个系统，根据消费者过去的购买行为，自动向电子商务网站的消费者推荐一定数量的商品。</p>
+<p>我们将使用一个在线零售数据集，你可以从这个链接下载:</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://archive.ics.uci.edu/ml/machine-learning-databases/00352/">https://archive.ics.uci.edu/ml/machine-learning-databases/00352/</a></p>
+</blockquote>
+<p>详细代码见：<a target="_blank" rel="noopener" href="https://github.com/Guadzilla/recpre/blob/master/task7/word2vec_demo.ipynb">recpre/word2vec_demo.ipynb at master · Guadzilla/recpre (github.com)</a> 因为和原文差不多，就不重复介绍了。</p>
+<h1 id="在-Movielens-数据集上用-Word2Vec-对用户聚类"><a href="#在-Movielens-数据集上用-Word2Vec-对用户聚类" class="headerlink" title="在 Movielens 数据集上用 Word2Vec 对用户聚类"></a>在 Movielens 数据集上用 Word2Vec 对用户聚类</h1><p>见 word2vec_cluster.ipynb</p>
+<h3 id="导入相关包"><a href="#导入相关包" class="headerlink" title="导入相关包"></a>导入相关包</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">import</span> umap</span><br><span class="line"><span class="keyword">import</span> umap.plot</span><br><span class="line"><span class="keyword">from</span> tqdm <span class="keyword">import</span> tqdm</span><br><span class="line"><span class="keyword">from</span> gensim.models <span class="keyword">import</span> Word2Vec </span><br><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> train_test_split </span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line">%matplotlib inline</span><br><span class="line"><span class="keyword">import</span> warnings</span><br><span class="line">warnings.filterwarnings(<span class="string">&#x27;ignore&#x27;</span>)	</span><br></pre></td></tr></table></figure>
+<h3 id="加载数据集"><a href="#加载数据集" class="headerlink" title="加载数据集"></a>加载数据集</h3><p>最后要得到：所有用户的列表 <code>users=[user1,user2,...]</code>，语料库<code>corpus=[[item1,item2,...],[item2,item5,...],...]</code>，和商品字典：<code>items_dict=&#123;item1:&quot;item1的描述&quot;, item2:&quot;item2的描述&quot;,...&#125;</code></p>
+<p>这里的语料库其实就是每个用户的购买序列组成的列表，我们把每个商品看作一个词，用户的一个购买序列看作一句话，通过这种方式构建语料库。</p>
+<p>构建商品字典是为了方便后续查看相似物品信息。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">load_data</span>(<span class="params">file_path</span>):</span></span><br><span class="line">    df = pd.read_table(<span class="string">&#x27;../ml-1m/ratings.dat&#x27;</span>, sep=<span class="string">&#x27;::&#x27;</span>, names = [<span class="string">&#x27;userID&#x27;</span>,<span class="string">&#x27;itemID&#x27;</span>,<span class="string">&#x27;Rating&#x27;</span>,<span class="string">&#x27;Zip-code&#x27;</span>])</span><br><span class="line">    movies = pd.read_table(<span class="string">&#x27;../ml-1m/movies.dat&#x27;</span>,sep=<span class="string">&#x27;::&#x27;</span>,names=[<span class="string">&#x27;MovieID&#x27;</span>,<span class="string">&#x27;Title&#x27;</span>,<span class="string">&#x27;Genres&#x27;</span>],encoding=<span class="string">&#x27;ISO-8859-1&#x27;</span>)</span><br><span class="line">    movies[<span class="string">&#x27;content&#x27;</span>] = movies[<span class="string">&#x27;Title&#x27;</span>] + <span class="string">&#x27;__&#x27;</span> + movies[<span class="string">&#x27;Genres&#x27;</span>]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 所有userID</span></span><br><span class="line">    users = df[<span class="string">&quot;userID&quot;</span>].unique().tolist()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 存储user的购买历史,每个user对应一个list,每个list当作一句话,所有list作为语料库</span></span><br><span class="line">    corpus = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> tqdm(users):</span><br><span class="line">        temp = df[df[<span class="string">&quot;userID&quot;</span>] == i][<span class="string">&quot;itemID&quot;</span>].tolist()</span><br><span class="line">        corpus.append(temp)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 建立商品字典,方便后续查看相似物品信息</span></span><br><span class="line">    items_dict = movies.groupby(<span class="string">&#x27;MovieID&#x27;</span>)[<span class="string">&#x27;content&#x27;</span>].apply(<span class="built_in">list</span>).to_dict()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> users, corpus, items_dict</span><br></pre></td></tr></table></figure>
+<p>Movielens-1m 数据集很完整，没有缺失值要处理。</p>
+<h3 id="训练-Word2Vec"><a href="#训练-Word2Vec" class="headerlink" title="训练 Word2Vec"></a>训练 Word2Vec</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 训练word2vec模型</span></span><br><span class="line">model = Word2Vec(window = <span class="number">10</span>, sg = <span class="number">1</span>, hs = <span class="number">0</span>, negative = <span class="number">10</span>, alpha=<span class="number">0.03</span>, min_alpha=<span class="number">0.0007</span>, seed = <span class="number">14</span>)</span><br><span class="line">model.build_vocab(corpus, progress_per=<span class="number">200</span>)</span><br><span class="line">model.train(corpus, total_examples = model.corpus_count, epochs=<span class="number">10</span>, report_delay=<span class="number">1</span>)</span><br><span class="line"><span class="comment"># 模型训练完成, init_sims()提高内存运行效率</span></span><br><span class="line">model.init_sims(replace=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="查看模型参数"><a href="#查看模型参数" class="headerlink" title="查看模型参数"></a>查看模型参数</h3><p>共有3416个 item embedding ,每个维度为100.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 打印模型</span></span><br><span class="line"><span class="built_in">print</span>(model)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Word2Vec(vocab=3416, vector_size=100, alpha=0.03)</span></span><br></pre></td></tr></table></figure>
+<h3 id="查看相似物品"><a href="#查看相似物品" class="headerlink" title="查看相似物品"></a>查看相似物品</h3><p>首先提取所有向量</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 提取向量</span></span><br><span class="line">X = model.wv[model.wv.key_to_index.keys()]</span><br></pre></td></tr></table></figure>
+<p>查看 movies 信息，这里我们就选第一个电影 “Toy Story”，看看它的相似电影</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">movies = pd.read_table(<span class="string">&#x27;../ml-1m/movies.dat&#x27;</span>,sep=<span class="string">&#x27;::&#x27;</span>,names=[<span class="string">&#x27;MovieID&#x27;</span>,<span class="string">&#x27;Title&#x27;</span>,<span class="string">&#x27;Genres&#x27;</span>],encoding=<span class="string">&#x27;ISO-8859-1&#x27;</span>)</span><br><span class="line">movies.head()</span><br></pre></td></tr></table></figure>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427172027663.png" alt="image-20220427172027663" style="zoom:67%;" /></p>
+<p>Toy Story 的 key 就是对应的 MovieID = 1，通过模型内置的字典找到它对应的索引为 29</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">model.wv.key_to_index[<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 29</span></span><br></pre></td></tr></table></figure>
+<p>计算并返回与它相似的10部电影</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">similar_products</span>(<span class="params">v, n = <span class="number">10</span></span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    返回最相似的n个物品</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="comment"># 为输入向量提取最相似的商品</span></span><br><span class="line">    ms = model.wv.similar_by_vector(v, topn= n+<span class="number">1</span>)[<span class="number">1</span>:]</span><br><span class="line">    <span class="comment"># 提取相似产品的名称和相似度评分</span></span><br><span class="line">    new_ms = []</span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> ms:</span><br><span class="line">        pair = (items_dict[j[<span class="number">0</span>]][<span class="number">0</span>], j[<span class="number">1</span>])</span><br><span class="line">        new_ms.append(pair)</span><br><span class="line">    <span class="keyword">return</span> new_ms   </span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> similar_products(X[<span class="number">29</span>]):</span><br><span class="line">    <span class="built_in">print</span>(i[<span class="number">0</span>])</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">Aladdin (1992)__Animation|Children&#x27;s|Comedy|Musical</span></span><br><span class="line"><span class="string">Silence of the Lambs, The (1991)__Drama|Thriller</span></span><br><span class="line"><span class="string">Train of Life (Train De Vie) (1998)__Comedy|Drama</span></span><br><span class="line"><span class="string">Home Alone (1990)__Children&#x27;s|Comedy</span></span><br><span class="line"><span class="string">Jumanji (1995)__Adventure|Children&#x27;s|Fantasy</span></span><br><span class="line"><span class="string">Waiting to Exhale (1995)__Comedy|Drama</span></span><br><span class="line"><span class="string">Ghost (1990)__Comedy|Romance|Thriller</span></span><br><span class="line"><span class="string">Beavis and Butt-head Do America (1996)__Animation|Comedy</span></span><br><span class="line"><span class="string">Tom and Huck (1995)__Adventure|Children&#x27;s</span></span><br><span class="line"><span class="string">Brady Bunch Movie, The (1995)__Comedy</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Toy Story 的类别是 Animation|Children’s|Comedy ，与它相似的电影也大都是动画片、儿童电影，说明 word2vec 一定程度上的确给相似的电影学到了相似的embedding.</p>
+<p>其中第2部 Silence of the Lambs , 现实中喜欢玩具总动员的大多是有冒险精神的大人，所以性格的另一面喜欢沉默的羔羊也是可以的（狡辩）</p>
+<h3 id="对物品和用户向量进行聚类"><a href="#对物品和用户向量进行聚类" class="headerlink" title="对物品和用户向量进行聚类"></a>对物品和用户向量进行聚类</h3><p>定义用来聚类和画图的函数</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 两种画图方法</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">visualize_emb</span>(<span class="params">X</span>):</span></span><br><span class="line">    cluster_embedding = umap.UMAP(n_neighbors=<span class="number">30</span>, min_dist=<span class="number">0.0</span>,</span><br><span class="line">    n_components=<span class="number">2</span>, random_state=<span class="number">42</span>).fit_transform(X)</span><br><span class="line">    plt.figure(figsize=(<span class="number">10</span>,<span class="number">9</span>))</span><br><span class="line">    plt.scatter(cluster_embedding[:, <span class="number">0</span>], cluster_embedding[:, <span class="number">1</span>], s=<span class="number">3</span>, cmap=<span class="string">&#x27;Spectral&#x27;</span>)</span><br><span class="line">    plt.show()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">umap_plot_emb</span>(<span class="params">X</span>):</span></span><br><span class="line">    cluster_embedding = umap.UMAP(n_neighbors=<span class="number">30</span>, min_dist=<span class="number">0.0</span>,</span><br><span class="line">    n_components=<span class="number">2</span>, random_state=<span class="number">42</span>).fit(X)</span><br><span class="line">    umap.plot.points(cluster_embedding)</span><br></pre></td></tr></table></figure>
+<h4 id="可视化物品向量"><a href="#可视化物品向量" class="headerlink" title="可视化物品向量"></a>可视化物品向量</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">visualize_emb(X)</span><br><span class="line">umap_plot_emb(X)</span><br></pre></td></tr></table></figure>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427164950421.png" alt="image-20220427164950421" style="zoom:50%;" /><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165014070.png" alt="image-20220427165014070" style="zoom: 41%;" /></p>
+<p>居然类似一个圆？意思是接近随机生成吗？</p>
+<h4 id="可视化用户向量"><a href="#可视化用户向量" class="headerlink" title="可视化用户向量"></a>可视化用户向量</h4><p>用户的向量可以用看过的电影的向量求均值表示，也可以对一部分求均值表示</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">aggregate_vectors</span>(<span class="params">products</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    返回用户向量</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    product_vec = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> products:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            product_vec.append(model.wv[i])</span><br><span class="line">        <span class="keyword">except</span> KeyError:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="keyword">return</span> np.mean(product_vec, axis=<span class="number">0</span>)</span><br><span class="line">    </span><br><span class="line">usersVec_all_item = []  <span class="comment"># 对看过的所有电影的向量求均值</span></span><br><span class="line">usersVec_last_10 = []   <span class="comment"># 对看过的最后10个电影的向量求均值</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(users)):</span><br><span class="line">    usersVec_all_item.append(aggregate_vectors(corpus[i]))</span><br><span class="line">    usersVec_last_10.append(aggregate_vectors(corpus[i][-<span class="number">10</span>:]))</span><br></pre></td></tr></table></figure>
+<p>用户向量 = 看过的所有电影的向量的均值，可视化结果</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">visualize_emb(usersVec_all_item)</span><br><span class="line">umap_plot_emb(usersVec_all_item)</span><br></pre></td></tr></table></figure>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165406864.png" alt="image-20220427165406864" style="zoom:50%;" /><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165450274.png" alt="image-20220427165450274" style="zoom:41%;" /></p>
+<p>用户向量 = 看过的最后10部电影的向量的均值，可视化结果</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">visualize_emb(usersVec_last_10)</span><br><span class="line">umap_plot_emb(usersVec_last_10)</span><br></pre></td></tr></table></figure>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165724232.png" alt="image-20220427165724232" style="zoom:50%;" /><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220427165735996.png" alt="image-20220427165735996" style="zoom:41%;" /></p>
+<p>至此完成了利用word2vec训练得到物品的embedding，再用物品embedding表示用户embedding，最后对用户embedding聚类。</p>
+<h1 id="在-Movielens-数据集上用-Word2Vec-对用户进行推荐"><a href="#在-Movielens-数据集上用-Word2Vec-对用户进行推荐" class="headerlink" title="在 Movielens 数据集上用 Word2Vec 对用户进行推荐"></a>在 Movielens 数据集上用 Word2Vec 对用户进行推荐</h1><p>见 word2vec_rec.py</p>
+<p>如果要对用户推荐商品，就要比上面的简单对用户进行聚类稍微麻烦一点，因为需要划分训练集和验证集。划分数据集的代码如下：</p>
+<p>对数据集进行划分，我们在这一步需要获取的是，训练集、测试集出现了哪些用户，训练集的语料库，以及商品字典。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">load_data</span>(<span class="params">file_path</span>):</span></span><br><span class="line">    data = pd.read_table(<span class="string">&#x27;../ml-1m/ratings.dat&#x27;</span>, sep=<span class="string">&#x27;::&#x27;</span>, names = [<span class="string">&#x27;userID&#x27;</span>,<span class="string">&#x27;itemID&#x27;</span>,<span class="string">&#x27;Rating&#x27;</span>,<span class="string">&#x27;Zip-code&#x27;</span>])</span><br><span class="line">    movies = pd.read_table(<span class="string">&#x27;../ml-1m/movies.dat&#x27;</span>,sep=<span class="string">&#x27;::&#x27;</span>,names=[<span class="string">&#x27;MovieID&#x27;</span>,<span class="string">&#x27;Title&#x27;</span>,<span class="string">&#x27;Genres&#x27;</span>],encoding=<span class="string">&#x27;ISO-8859-1&#x27;</span>)</span><br><span class="line">    movies[<span class="string">&#x27;content&#x27;</span>] = movies[<span class="string">&#x27;Title&#x27;</span>] + <span class="string">&#x27;__&#x27;</span> + movies[<span class="string">&#x27;Genres&#x27;</span>]</span><br><span class="line">    <span class="comment"># </span></span><br><span class="line">    tra_data, val_data = train_test_split(data, test_size=<span class="number">0.2</span>)</span><br><span class="line">    users_train = tra_data[<span class="string">&#x27;userID&#x27;</span>].unique().tolist()</span><br><span class="line">    users_valid = val_data[<span class="string">&#x27;userID&#x27;</span>].unique().tolist()</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;&quot;&quot;训练集&quot;&quot;&quot;</span></span><br><span class="line">    <span class="comment"># 存储消费者的购买历史</span></span><br><span class="line">    train_users = &#123;&#125;</span><br><span class="line">    train_corpus = []</span><br><span class="line">    <span class="comment"># 用 itemID 填充列表</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> tqdm(users_train):</span><br><span class="line">        temp = tra_data[tra_data[<span class="string">&quot;userID&quot;</span>] == i][<span class="string">&quot;itemID&quot;</span>].tolist()</span><br><span class="line">        train_users[i] = temp</span><br><span class="line">        train_corpus.append(temp)</span><br><span class="line">    <span class="string">&quot;&quot;&quot;验证集&quot;&quot;&quot;</span></span><br><span class="line">    <span class="comment"># 存储消费者的购买历史</span></span><br><span class="line">    valid_users = &#123;&#125;</span><br><span class="line">    valid_corpus = []</span><br><span class="line">    <span class="comment"># 用商品代码填充列表</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> tqdm(users_valid):</span><br><span class="line">        temp = val_data[val_data[<span class="string">&quot;userID&quot;</span>] == i][<span class="string">&quot;itemID&quot;</span>].tolist()</span><br><span class="line">        valid_users[i] = temp</span><br><span class="line">        valid_corpus.append(temp)</span><br><span class="line">    <span class="string">&quot;&quot;&quot;建立商品字典&quot;&quot;&quot;</span></span><br><span class="line">    items_dict = movies.groupby(<span class="string">&#x27;MovieID&#x27;</span>)[<span class="string">&#x27;content&#x27;</span>].apply(<span class="built_in">list</span>).to_dict()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> train_users, train_corpus, valid_users, valid_corpus, items_dict</span><br></pre></td></tr></table></figure>
+<p>其它步骤与前面的相似，具体看代码吧。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">train_users, train_corpus, valid_users, valid_corpus, items_dict = load_data(<span class="string">&#x27;../ml-1m&#x27;</span>)</span><br><span class="line"><span class="comment"># train_users: &#123;user1:[item1,item2,...],user2:[item2,item5,...],...&#125;</span></span><br><span class="line"><span class="comment"># train_corpus: [[item1,item2,...],[item2,item5,...],...]</span></span><br><span class="line"><span class="comment"># 训练word2vec模型</span></span><br><span class="line">model = Word2Vec(window = <span class="number">10</span>, sg = <span class="number">1</span>, hs = <span class="number">0</span>, negative = <span class="number">10</span>, alpha=<span class="number">0.03</span>, min_alpha=<span class="number">0.0007</span>, seed = <span class="number">14</span>)</span><br><span class="line">model.build_vocab(train_corpus, progress_per=<span class="number">200</span>)</span><br><span class="line">model.train(train_corpus, total_examples = model.corpus_count, epochs=<span class="number">10</span>, report_delay=<span class="number">1</span>)</span><br><span class="line">model.init_sims(replace=<span class="literal">True</span>)</span><br><span class="line"><span class="comment"># 打印模型</span></span><br><span class="line"><span class="built_in">print</span>(model)</span><br><span class="line"><span class="comment"># 提取向量</span></span><br><span class="line">X = model.wv[model.wv.key_to_index.keys()]</span><br><span class="line"><span class="comment"># 可视化</span></span><br><span class="line"><span class="comment">#visualize_emb(X)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">similar_products_idx</span>(<span class="params">v, n = <span class="number">10</span></span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    返回最相似的n个物品</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="comment"># 为输入向量提取最相似的商品</span></span><br><span class="line">    ms = model.wv.similar_by_vector(v, topn= n+<span class="number">1</span>)[<span class="number">1</span>:]</span><br><span class="line">    <span class="keyword">return</span> ms  </span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">aggregate_vectors</span>(<span class="params">products</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    返回购买记录的平均向量</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    product_vec = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> products:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            product_vec.append(model.wv[i])</span><br><span class="line">        <span class="keyword">except</span> KeyError:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">            <span class="keyword">return</span> np.mean(product_vec, axis=<span class="number">0</span>)</span><br><span class="line">    </span><br><span class="line"><span class="comment"># 推荐TopN相似商品</span></span><br><span class="line">rec_dict = &#123;&#125;</span><br><span class="line">rel_dict = &#123;&#125;</span><br><span class="line"><span class="keyword">for</span> user <span class="keyword">in</span> valid_users:    <span class="comment"># valid_users:&#123;user1:[item1,item2,...],user2:[item2,item5,...],...&#125;</span></span><br><span class="line">    <span class="keyword">if</span> user <span class="keyword">not</span> <span class="keyword">in</span> train_users:</span><br><span class="line">        <span class="keyword">continue</span></span><br><span class="line">    user_vec = aggregate_vectors(train_users[user][-<span class="number">10</span>:])</span><br><span class="line">    similar_items = similar_products_idx(user_vec,<span class="number">10</span>)</span><br><span class="line">    rec_dict[user] = [x[<span class="number">0</span>] <span class="keyword">for</span> x <span class="keyword">in</span> similar_items]</span><br><span class="line">    rel_dict[user] = valid_users[user]</span><br><span class="line"></span><br><span class="line"><span class="comment"># evaluate</span></span><br><span class="line">rec_eval(rec_dict,rel_dict,train_users)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>评估结果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">recall: <span class="number">1.31</span></span><br><span class="line">precision <span class="number">4.34</span></span><br><span class="line">coverage <span class="number">71.29</span></span><br><span class="line">Popularity <span class="number">4.93</span></span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%80/" rel="tag"># 推荐系统基础</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/26/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%806/" rel="prev" title="推荐系统基础6">
+      <i class="fa fa-chevron-left"></i> 推荐系统基础6
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/27/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%808/" rel="next" title="推荐系统基础8">
+      推荐系统基础8 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A17%EF%BC%9A%E8%AF%8D%E5%90%91%E9%87%8F%E5%9F%BA%E7%A1%80"><span class="nav-number">1.</span> <span class="nav-text">任务7：词向量基础</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%96%99"><span class="nav-number">2.</span> <span class="nav-text">学习资料</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E8%A7%88"><span class="nav-number">2.1.</span> <span class="nav-text">概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.2.</span> <span class="nav-text">　介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#word2vec-%E8%AF%8D%E7%9A%84%E5%90%91%E9%87%8F%E8%A1%A8%E7%A4%BA"><span class="nav-number">2.3.</span> <span class="nav-text">word2vec - 词的向量表示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%8E%B7%E5%BE%97word2vec-embeddings"><span class="nav-number">2.4.</span> <span class="nav-text">如何获得word2vec embeddings?</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE"><span class="nav-number">2.4.0.1.</span> <span class="nav-text">准备训练数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%8E%B7%E5%BE%97-word2vec-Embeddings"><span class="nav-number">2.4.0.2.</span> <span class="nav-text">获得 word2vec Embeddings</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8%E9%9D%9E%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E4%B8%8A%E5%BA%94%E7%94%A8word2vec%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.5.</span> <span class="nav-text">在非文本数据上应用word2vec模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B%E7%A0%94%E7%A9%B6-%E4%BD%BF%E7%94%A8Python%E4%B8%AD%E7%9A%84word2vec%E8%BF%9B%E8%A1%8C%E5%9C%A8%E7%BA%BF%E5%95%86%E5%93%81%E6%8E%A8%E8%8D%90"><span class="nav-number">2.6.</span> <span class="nav-text">案例研究:使用Python中的word2vec进行在线商品推荐</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9C%A8-Movielens-%E6%95%B0%E6%8D%AE%E9%9B%86%E4%B8%8A%E7%94%A8-Word2Vec-%E5%AF%B9%E7%94%A8%E6%88%B7%E8%81%9A%E7%B1%BB"><span class="nav-number">3.</span> <span class="nav-text">在 Movielens 数据集上用 Word2Vec 对用户聚类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%BC%E5%85%A5%E7%9B%B8%E5%85%B3%E5%8C%85"><span class="nav-number">3.0.1.</span> <span class="nav-text">导入相关包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="nav-number">3.0.2.</span> <span class="nav-text">加载数据集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83-Word2Vec"><span class="nav-number">3.0.3.</span> <span class="nav-text">训练 Word2Vec</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E6%A8%A1%E5%9E%8B%E5%8F%82%E6%95%B0"><span class="nav-number">3.0.4.</span> <span class="nav-text">查看模型参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E7%9B%B8%E4%BC%BC%E7%89%A9%E5%93%81"><span class="nav-number">3.0.5.</span> <span class="nav-text">查看相似物品</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E7%89%A9%E5%93%81%E5%92%8C%E7%94%A8%E6%88%B7%E5%90%91%E9%87%8F%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB"><span class="nav-number">3.0.6.</span> <span class="nav-text">对物品和用户向量进行聚类</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AF%E8%A7%86%E5%8C%96%E7%89%A9%E5%93%81%E5%90%91%E9%87%8F"><span class="nav-number">3.0.6.1.</span> <span class="nav-text">可视化物品向量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AF%E8%A7%86%E5%8C%96%E7%94%A8%E6%88%B7%E5%90%91%E9%87%8F"><span class="nav-number">3.0.6.2.</span> <span class="nav-text">可视化用户向量</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9C%A8-Movielens-%E6%95%B0%E6%8D%AE%E9%9B%86%E4%B8%8A%E7%94%A8-Word2Vec-%E5%AF%B9%E7%94%A8%E6%88%B7%E8%BF%9B%E8%A1%8C%E6%8E%A8%E8%8D%90"><span class="nav-number">4.</span> <span class="nav-text">在 Movielens 数据集上用 Word2Vec 对用户进行推荐</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

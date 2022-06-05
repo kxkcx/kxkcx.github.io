@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="任务9：多路召回实践 基于任务3、任务5、任务6、任务7、任务8，总共5个召回模型，进行多路召回。 可以考虑对每个召回模型的物品打分进行相加，也可以加权求和。 分别计算每个模型 &amp; 多路召回模型的Top10、Top20、Top50的命中率。  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:type" content="article">
+<meta property="og:title" content="推荐系统基础9">
+<meta property="og:url" content="http://guadzilla.github.io/2022/04/28/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%809/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="任务9：多路召回实践 基于任务3、任务5、任务6、任务7、任务8，总共5个召回模型，进行多路召回。 可以考虑对每个召回模型的物品打分进行相加，也可以加权求和。 分别计算每个模型 &amp; 多路召回模型的Top10、Top20、Top50的命中率。  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220429174656385.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220428202209856.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220429174808948.png">
+<meta property="article:published_time" content="2022-04-28T15:03:02.000Z">
+<meta property="article:modified_time" content="2022-04-29T09:48:11.000Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="推荐系统基础">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220429174656385.png">
+
+<link rel="canonical" href="http://guadzilla.github.io/2022/04/28/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%809/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>推荐系统基础9 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/04/28/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%809/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          推荐系统基础9
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-04-28 23:03:02" itemprop="dateCreated datePublished" datetime="2022-04-28T23:03:02+08:00">2022-04-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-04-29 17:48:11" itemprop="dateModified" datetime="2022-04-29T17:48:11+08:00">2022-04-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">推荐系统</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>11 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h1 id="任务9：多路召回实践"><a href="#任务9：多路召回实践" class="headerlink" title="任务9：多路召回实践"></a>任务9：多路召回实践</h1><ul>
+<li>基于任务3、任务5、任务6、任务7、任务8，总共5个召回模型，进行多路召回。</li>
+<li>可以考虑对每个召回模型的物品打分进行相加，也可以加权求和。</li>
+<li>分别计算每个模型 &amp; 多路召回模型的Top10、Top20、Top50的命中率。</li>
+</ul>
+<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<span id="more"></span>
+<p>根据前面完成的任务，5个召回模型分别是 ItemCF、UserCF、MF、SlopeOne、Word2Vec。</p>
+<p><strong>任务目标</strong>：对用户是否评分做出预测，即评分只有0和1（数据集中用户评分过的电影评分都取1，未评分过的电影评分都取0），进行推荐 TopN 推荐。</p>
+<p>这样的话 SlopeOne 没法做了，因为评分只有0和1，有评分的哪些物品的评分都是1，物品评分之间没有均差。当然也可以把任务改为预测5分制的评分；或者两阶段预测，先预测是否会评分，再预测会评多少分。那样都需要对模型做不少修改，暂时没有精力做，图省事就只实现了4个召回模型 ItemCF、UserCF、MF、Word2Vec。</p>
+<p><strong>进行多路召回（模型融合），步骤大致分为以下几步</strong>：</p>
+<ol>
+<li>划分数据集并保存</li>
+<li>各模型读取数据进行训练</li>
+<li>各模型进行预测，保存评估指标、保存预测结果</li>
+<li>读取所有预测结果进行加权（取均值、或者训练得到权重），进行最终评估</li>
+</ol>
+<h2 id="划分数据集"><a href="#划分数据集" class="headerlink" title="划分数据集"></a>划分数据集</h2><p>多路召回，首先保证各个模型上数据集划分是一致的。所以考虑把划分数据集这一部分独立出来单独运行。划分完的数据要保存下来，方便后续各个模型加载并独立做实验。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">load_and_save</span>(<span class="params">load_path, save_path, test_rate = <span class="number">0.1</span></span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    加载数据，分割训练集、验证集</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    data = pd.read_table(os.path.join(load_path,<span class="string">&#x27;ratings.dat&#x27;</span>), sep=<span class="string">&#x27;::&#x27;</span>, names = [<span class="string">&#x27;userID&#x27;</span>,<span class="string">&#x27;itemID&#x27;</span>,<span class="string">&#x27;Rating&#x27;</span>,<span class="string">&#x27;Zip-code&#x27;</span>])</span><br><span class="line">    data = data[[<span class="string">&#x27;userID&#x27;</span>,<span class="string">&#x27;itemID&#x27;</span>]]</span><br><span class="line">    uid_lbe = LabelEncoder()</span><br><span class="line">    data[<span class="string">&#x27;userID&#x27;</span>] = uid_lbe.fit_transform(data[<span class="string">&#x27;userID&#x27;</span>])</span><br><span class="line">    iid_lbe = LabelEncoder()</span><br><span class="line">    data[<span class="string">&#x27;itemID&#x27;</span>] = iid_lbe.fit_transform(data[<span class="string">&#x27;itemID&#x27;</span>])</span><br><span class="line"></span><br><span class="line">    train_data, valid_data = train_test_split(data,test_size=test_rate)</span><br><span class="line">    </span><br><span class="line">    train_users = train_data.groupby(<span class="string">&#x27;userID&#x27;</span>)[<span class="string">&#x27;itemID&#x27;</span>].apply(<span class="built_in">list</span>).to_dict()</span><br><span class="line">    valid_users = valid_data.groupby(<span class="string">&#x27;userID&#x27;</span>)[<span class="string">&#x27;itemID&#x27;</span>].apply(<span class="built_in">list</span>).to_dict()</span><br><span class="line"></span><br><span class="line">    train_data.to_csv(<span class="string">&#x27;train_data.csv&#x27;</span>, index=<span class="literal">False</span>)</span><br><span class="line">    valid_data.to_csv(<span class="string">&#x27;valid_data.csv&#x27;</span>, index=<span class="literal">False</span>)</span><br><span class="line">    pickle.dump(train_users, <span class="built_in">open</span>(os.path.join(save_path,<span class="string">&#x27;train_users.txt&#x27;</span>), <span class="string">&#x27;wb&#x27;</span>))</span><br><span class="line">    pickle.dump(valid_users, <span class="built_in">open</span>(os.path.join(save_path,<span class="string">&#x27;valid_users.txt&#x27;</span>), <span class="string">&#x27;wb&#x27;</span>))</span><br><span class="line"></span><br><span class="line">load_and_save(load_path=<span class="string">&#x27;../ml-1m&#x27;</span>, save_path=<span class="string">&#x27;./data&#x27;</span>, test_rate=<span class="number">0.1</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="训练各模型"><a href="#训练各模型" class="headerlink" title="训练各模型"></a>训练各模型</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ItemCF.py   	--&gt;   基于物品的协同过滤算法</span><br><span class="line">UserCF.py   	--&gt;   基于用户的协同过滤算法</span><br><span class="line">MF.py			--&gt;   梯度下降矩阵分解算法</span><br><span class="line">Word2Vec.py		--&gt;	  word2vec算法</span><br><span class="line"><span class="comment"># 各模型细节就不展示了</span></span><br></pre></td></tr></table></figure>
+<h2 id="保存各模型指标"><a href="#保存各模型指标" class="headerlink" title="保存各模型指标"></a>保存各模型指标</h2><p>所有模型的 TopK 都取100，各模型在验证集上的评估指标为：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220429174656385.png" alt="image-20220429174656385"></p>
+<p>保存各模型的预测结果，注意保存的是没有截断 TopN 的推荐列表：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">save_rec_dict</span>(<span class="params">save_path,rec_dict</span>):</span></span><br><span class="line">    pickle.dump(rec_dict, <span class="built_in">open</span>(os.path.join(save_path,<span class="string">&#x27;word2vec_rec_dict.txt&#x27;</span>), <span class="string">&#x27;wb&#x27;</span>))</span><br></pre></td></tr></table></figure>
+<p>保存的格式为字典：<code>Top50_rec_dict=&#123;uid1:&#123;iid1:score,iid3:score,...&#125;, uid2:&#123;iid2:score,iid3:score,...&#125;,...&#125;</code></p>
+<h2 id="模型融合"><a href="#模型融合" class="headerlink" title="模型融合"></a>模型融合</h2><p>观察各模型保存的预测得分结果，发现 MF 和另外几个算法得到的数据的值域不在同一区间，如果直接取均值的话， MF 的影响就很小了，所以先对每个用户的物品得分列表做 softmax 再取均值</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220428202209856.png" alt="image-20220428202209856"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">load_rec_dict</span>(<span class="params">file_path, model_name</span>):</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(os.path.join(file_path,<span class="string">f&#x27;<span class="subst">&#123;model_name&#125;</span>_rec_dict.txt&#x27;</span>),<span class="string">&#x27;rb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        Rec_dict = pickle.load(f)</span><br><span class="line">    <span class="comment"># Rec_dict:&#123;uid1:[(iid1,score),(iid2,score),...],uid2:[(...),(...),...],...&#125;</span></span><br><span class="line">    new_rec_dict = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> uid, iid_score_list <span class="keyword">in</span> Rec_dict.items():</span><br><span class="line">        new_rec_dict[uid] = <span class="built_in">dict</span>()</span><br><span class="line">        score_list = []</span><br><span class="line">        iid_list = []</span><br><span class="line">        <span class="keyword">for</span> iid, score <span class="keyword">in</span> iid_score_list.items():</span><br><span class="line">            score_list.append(score)</span><br><span class="line">            iid_list.append(iid)</span><br><span class="line">        prob = softmax(score_list)      <span class="comment"># 把物品评分转化成概率</span></span><br><span class="line">        <span class="keyword">for</span> iid, p <span class="keyword">in</span> <span class="built_in">zip</span>(iid_list, prob):</span><br><span class="line">            new_rec_dict[uid][iid] = p</span><br><span class="line">    <span class="keyword">return</span> new_rec_dict</span><br></pre></td></tr></table></figure>
+<p>加权取平均融合：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">mixup</span>(<span class="params">*rec_dicts</span>):</span></span><br><span class="line">    new_rec_dict = &#123;&#125;</span><br><span class="line">    num = &#123;&#125;    <span class="comment"># 记录目标用户被推荐同一商品几次，后续做除数</span></span><br><span class="line">    <span class="keyword">for</span> rec_dict <span class="keyword">in</span> tqdm(rec_dicts):</span><br><span class="line">        <span class="keyword">for</span> uid <span class="keyword">in</span> rec_dict:</span><br><span class="line">            <span class="keyword">if</span> uid <span class="keyword">not</span> <span class="keyword">in</span> new_rec_dict:</span><br><span class="line">                new_rec_dict[uid] = &#123;&#125;</span><br><span class="line">                num[uid] = &#123;&#125;</span><br><span class="line">            <span class="keyword">for</span> iid, prob <span class="keyword">in</span> rec_dict[uid].items():</span><br><span class="line">                <span class="keyword">if</span> iid <span class="keyword">not</span> <span class="keyword">in</span> new_rec_dict[uid]:</span><br><span class="line">                    new_rec_dict[uid][iid] = <span class="number">0</span></span><br><span class="line">                    num[uid][iid] = <span class="number">0</span></span><br><span class="line">                new_rec_dict[uid][iid] += prob</span><br><span class="line">                num[uid][iid] += <span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> uid,iid_score <span class="keyword">in</span> new_rec_dict.items():</span><br><span class="line">        <span class="keyword">for</span> iid <span class="keyword">in</span> iid_score:</span><br><span class="line">            new_rec_dict[uid][iid] /= num[uid][iid]</span><br><span class="line">    <span class="keyword">return</span> new_rec_dict</span><br><span class="line"></span><br><span class="line">new_rec_dict = mixup(*models_rec_dict)</span><br></pre></td></tr></table></figure>
+<p>TopN 推荐：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># TopN推荐</span></span><br><span class="line">Top50_rec_dict = &#123;k: <span class="built_in">sorted</span>(v.items(), key=<span class="keyword">lambda</span> x: x[<span class="number">1</span>], reverse=<span class="literal">True</span>)[:<span class="number">50</span>] <span class="keyword">for</span> k, v <span class="keyword">in</span> new_rec_dict.items()&#125;</span><br><span class="line">Top50_rec_dict = &#123;k: <span class="built_in">list</span>([x[<span class="number">0</span>] <span class="keyword">for</span> x <span class="keyword">in</span> v]) <span class="keyword">for</span> k, v <span class="keyword">in</span> Top50_rec_dict.items()&#125;</span><br><span class="line">Top10_rec_dict = &#123;k: v[:<span class="number">10</span>] <span class="keyword">for</span> k, v <span class="keyword">in</span> Top50_rec_dict.items()&#125;</span><br><span class="line">Top20_rec_dict = &#123;k: v[:<span class="number">20</span>] <span class="keyword">for</span> k, v <span class="keyword">in</span> Top50_rec_dict.items()&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 计算评价指标</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">stack_eval</span>(<span class="params">val_rec_items, val_user_items, trn_user_items</span>):</span></span><br><span class="line">    recall = Recall(val_rec_items, val_user_items)</span><br><span class="line">    precision = Precision(val_rec_items, val_user_items)</span><br><span class="line">    coverage = Coverage(val_rec_items, trn_user_items)</span><br><span class="line">    popularity = Popularity(val_rec_items, trn_user_items)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;recall&#125;</span>\t<span class="subst">&#123;precision&#125;</span>\t<span class="subst">&#123;coverage&#125;</span>\t<span class="subst">&#123;popularity&#125;</span>&#x27;</span>,end=<span class="string">&#x27;\t&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Top 10,20,50:&#x27;</span>)</span><br><span class="line">bag_eval(Top10_rec_dict,valid_users,train_users)</span><br><span class="line">bag_eval(Top20_rec_dict,valid_users,train_users)</span><br><span class="line">bag_eval(Top50_rec_dict,valid_users,train_users)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;\nDone.&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>实验结果：最优结果红色加粗，次优结果橙色加粗。前四行是单模型，后面的都是融合模型，取每个模型的首字母表示每个模型。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220429174808948.png" alt="image-20220429174808948"></p>
+<p>居然是单模型UserCF最优…</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%80/" rel="tag"># 推荐系统基础</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/27/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%808/" rel="prev" title="推荐系统基础8">
+      <i class="fa fa-chevron-left"></i> 推荐系统基础8
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A19%EF%BC%9A%E5%A4%9A%E8%B7%AF%E5%8F%AC%E5%9B%9E%E5%AE%9E%E8%B7%B5"><span class="nav-number">1.</span> <span class="nav-text">任务9：多路召回实践</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%92%E5%88%86%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="nav-number">1.1.</span> <span class="nav-text">划分数据集</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E5%90%84%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.2.</span> <span class="nav-text">训练各模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%9D%E5%AD%98%E5%90%84%E6%A8%A1%E5%9E%8B%E6%8C%87%E6%A0%87"><span class="nav-number">1.3.</span> <span class="nav-text">保存各模型指标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E8%9E%8D%E5%90%88"><span class="nav-number">1.4.</span> <span class="nav-text">模型融合</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

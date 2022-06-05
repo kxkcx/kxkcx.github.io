@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="任务6：Slope One 阅读Slope One基础原理 编写Slope One用于电影推荐的流程 比较Slope One、SVD、协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:type" content="article">
+<meta property="og:title" content="推荐系统基础6">
+<meta property="og:url" content="http://guadzilla.github.io/2022/04/26/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%806/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="任务6：Slope One 阅读Slope One基础原理 编写Slope One用于电影推荐的流程 比较Slope One、SVD、协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220426192311847.png">
+<meta property="og:image" content="https://img-blog.csdn.net/20160715114006473">
+<meta property="og:image" content="https://img-blog.csdn.net/20160715114054480">
+<meta property="og:image" content="https://img-blog.csdn.net/20160715114619049">
+<meta property="og:image" content="https://camo.githubusercontent.com/68d8995d1a9bacf4e58fa39359de71cbb99e3bf5abc5174bd1033e8b93fdae81/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832373135303233373932312e706e67237069635f63656e746572">
+<meta property="article:published_time" content="2022-04-26T13:03:02.000Z">
+<meta property="article:modified_time" content="2022-04-29T04:23:06.000Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="推荐系统基础">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220426192311847.png">
+
+<link rel="canonical" href="http://guadzilla.github.io/2022/04/26/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%806/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>推荐系统基础6 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/04/26/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%806/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          推荐系统基础6
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-04-26 21:03:02" itemprop="dateCreated datePublished" datetime="2022-04-26T21:03:02+08:00">2022-04-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-04-29 12:23:06" itemprop="dateModified" datetime="2022-04-29T12:23:06+08:00">2022-04-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">推荐系统</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>13 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h1 id="任务6：Slope-One"><a href="#任务6：Slope-One" class="headerlink" title="任务6：Slope One"></a>任务6：Slope One</h1><ul>
+<li>阅读<a target="_blank" rel="noopener" href="https://blog.csdn.net/xidianliutingting/article/details/51916578">Slope One基础原理</a></li>
+<li>编写Slope One用于电影推荐的流程</li>
+<li>比较Slope One、SVD、协同过滤的精度，哪一个模型的RMSE评分更低？</li>
+</ul>
+<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<span id="more"></span>
+<h2 id="slope-one-算法"><a href="#slope-one-算法" class="headerlink" title="slope one 算法"></a>slope one 算法</h2><p>1.示例引入</p>
+<p>我们可以这么认为，商品间受欢迎的差异从某种程度上是固定的，比如所有人都喜欢海底捞火锅，但对赛百味的喜爱程度一般。此时小明对海底捞火锅的评分为4，对赛百味的评分为2；而小吴对海底捞火锅的评分为5，对赛百味的评分为3。尽管两个人评分的习惯上不同，小明平均打的分都高，但是对两个物品来说，他们之间的评分差值是不变的，即 $5-3=4-2$ 。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220426192311847.png" alt="image-20220426192311847"></p>
+<p>Slope one 的思路大抵如此，现在假设我们想预测 Alice 对物品 2 的评分，已有的是别的用户对物品 1 和对物品 2 的评分和 Alice 对物品 1 的评分。</p>
+<p>从物品评分偏差的角度，我们可以求出物品 1 和物品 2 之间的评分偏差，即 $R_{1,2}=\frac{(3-1)+(4-3)+(3-3)+(1-5)}{4}=-0.25$，再用 Alice 对物品 1 的评分减去这个偏差，即 $p_{Alice,2}=r_{Alice,1}-R_{1,2}=5-(-0.25)=5.25$，把它作为 Alice 对物品 2 的预测评分。这就是Slope one 算法最简单的场景。</p>
+<h2 id="slope-one-算法思想"><a href="#slope-one-算法思想" class="headerlink" title="slope one 算法思想"></a>slope one 算法思想</h2><p>Slope One 算法是由 Daniel Lemire 教授在 2005 年提出的一个 <strong>Item-Based</strong> 的协同过滤推荐算法。和其它类似算法相比, 它的最大优点在于算法很简单, 易于实现, 执行效率高, 同时推荐的准确性相对较高。<br>Slope One算法是基于不同物品之间的评分差的线性算法，预测用户对物品评分的个性化算法。主要分为三步：</p>
+<p>Step1: 计算物品之间的评分差的均值，记为物品间的评分偏差(两物品同时被评分)；</p>
+<p><img src="https://img-blog.csdn.net/20160715114006473" alt="这里写图片描述"></p>
+<p>Step2:根据物品间的评分偏差和用户的历史评分，预测用户对未评分的物品的评分。</p>
+<p><img src="https://img-blog.csdn.net/20160715114054480" alt="这里写图片描述"></p>
+<p>Step3:将预测评分排序，取topN对应的物品推荐给用户。</p>
+<p><strong>举例：</strong><br>假设有100个人对物品A和物品B打分了，R(AB)表示这100个人对A和B打分的平均偏差;有1000个人对物品B和物品C打分了， R(CB)表示这1000个人对C和B打分的平均偏差；</p>
+<p><img src="https://img-blog.csdn.net/20160715114619049" alt="这里写图片描述"></p>
+<h2 id="slope-one-的代码实现"><a href="#slope-one-的代码实现" class="headerlink" title="slope one 的代码实现"></a>slope one 的代码实现</h2><p>1.准备数据</p>
+<p><img src="https://camo.githubusercontent.com/68d8995d1a9bacf4e58fa39359de71cbb99e3bf5abc5174bd1033e8b93fdae81/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832373135303233373932312e706e67237069635f63656e746572" alt="在这里插入图片描述"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义数据集</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loadData</span>():</span></span><br><span class="line">    rating_data=&#123;<span class="number">1</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">4</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">4</span>&#125;,</span><br><span class="line">                 <span class="number">2</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">3</span>&#125;,</span><br><span class="line">                 <span class="number">3</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">4</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">4</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">5</span>&#125;,</span><br><span class="line">                 <span class="number">4</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">4</span>&#125;,</span><br><span class="line">                 <span class="number">5</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">1</span>&#125;</span><br><span class="line">              &#125;</span><br><span class="line">    <span class="keyword">return</span> rating_data	</span><br><span class="line">users_rating = loadData()</span><br><span class="line">users_rating</span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">&#123;1: &#123;&#x27;A&#x27;: 5, &#x27;B&#x27;: 3, &#x27;C&#x27;: 4, &#x27;D&#x27;: 4&#125;,</span></span><br><span class="line"><span class="string"> 2: &#123;&#x27;A&#x27;: 3, &#x27;B&#x27;: 1, &#x27;C&#x27;: 2, &#x27;D&#x27;: 3, &#x27;E&#x27;: 3&#125;,</span></span><br><span class="line"><span class="string"> 3: &#123;&#x27;A&#x27;: 4, &#x27;B&#x27;: 3, &#x27;C&#x27;: 4, &#x27;D&#x27;: 3, &#x27;E&#x27;: 5&#125;,</span></span><br><span class="line"><span class="string"> 4: &#123;&#x27;A&#x27;: 3, &#x27;B&#x27;: 3, &#x27;C&#x27;: 1, &#x27;D&#x27;: 5, &#x27;E&#x27;: 4&#125;,</span></span><br><span class="line"><span class="string"> 5: &#123;&#x27;A&#x27;: 1, &#x27;B&#x27;: 5, &#x27;C&#x27;: 5, &#x27;D&#x27;: 2, &#x27;E&#x27;: 1&#125;&#125;</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+<p>2.建立倒排索引</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 建立倒排索引</span></span><br><span class="line">items_rating = &#123;&#125;</span><br><span class="line"><span class="keyword">for</span> user,ratings <span class="keyword">in</span> users_rating.items():</span><br><span class="line">    <span class="keyword">for</span> item,rating <span class="keyword">in</span> ratings.items():</span><br><span class="line">        <span class="keyword">if</span> item <span class="keyword">not</span> <span class="keyword">in</span> items_rating:</span><br><span class="line">            items_rating[item] = &#123;&#125;</span><br><span class="line">        <span class="keyword">if</span> user <span class="keyword">not</span> <span class="keyword">in</span> items_rating[item]:</span><br><span class="line">            items_rating[item][user] = <span class="number">0</span></span><br><span class="line">        items_rating[item][user] = rating</span><br><span class="line">items_rating</span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">&#123;&#x27;A&#x27;: &#123;1: 5, 2: 3, 3: 4, 4: 3, 5: 1&#125;,</span></span><br><span class="line"><span class="string"> &#x27;B&#x27;: &#123;1: 3, 2: 1, 3: 3, 4: 3, 5: 5&#125;,</span></span><br><span class="line"><span class="string"> &#x27;C&#x27;: &#123;1: 4, 2: 2, 3: 4, 4: 1, 5: 5&#125;,</span></span><br><span class="line"><span class="string"> &#x27;D&#x27;: &#123;1: 4, 2: 3, 3: 3, 4: 5, 5: 2&#125;,</span></span><br><span class="line"><span class="string"> &#x27;E&#x27;: &#123;2: 3, 3: 5, 4: 4, 5: 1&#125;&#125;</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+<p>3.计算物品间评分偏差矩阵</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 计算物品间评分偏差</span></span><br><span class="line">Ratings_diffs = &#123;&#125;	<span class="comment"># 评分偏差矩阵</span></span><br><span class="line">N_set = &#123;&#125;			<span class="comment"># 物品对间共同被评分次数</span></span><br><span class="line"><span class="keyword">for</span> itemx,itemx_history <span class="keyword">in</span> items_rating.items():</span><br><span class="line">    <span class="keyword">if</span> itemx <span class="keyword">not</span> <span class="keyword">in</span> Ratings_diffs:</span><br><span class="line">        Ratings_diffs[itemx] = &#123;&#125;</span><br><span class="line">        N_set[itemx] = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> itemy,itemy_history <span class="keyword">in</span> items_rating.items():</span><br><span class="line">        <span class="keyword">if</span> itemx != itemy:</span><br><span class="line">            Ratings_diffs[itemx][itemy] = <span class="number">0</span></span><br><span class="line">            N_set[itemx][itemy] = <span class="number">0</span></span><br><span class="line">            <span class="keyword">for</span> x_user <span class="keyword">in</span> itemx_history:</span><br><span class="line">                <span class="keyword">if</span> x_user <span class="keyword">in</span> itemy_history:</span><br><span class="line">                    Ratings_diffs[itemx][itemy] += items_rating[itemy][x_user] - items_rating[itemx][x_user]</span><br><span class="line">                    N_set[itemx][itemy] += <span class="number">1</span></span><br><span class="line"><span class="keyword">for</span> itemx,ys <span class="keyword">in</span> Ratings_diffs.items():</span><br><span class="line">    <span class="keyword">for</span> itemy,rating <span class="keyword">in</span> ys.items():</span><br><span class="line">        Ratings_diffs[itemx][itemy] /= N_set[itemx][itemy]</span><br><span class="line"></span><br><span class="line">Ratings_diffs,N_set</span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">(&#123;&#x27;A&#x27;: &#123;&#x27;B&#x27;: -0.2, &#x27;C&#x27;: 0.0, &#x27;D&#x27;: 0.2, &#x27;E&#x27;: 0.5&#125;,</span></span><br><span class="line"><span class="string">  &#x27;B&#x27;: &#123;&#x27;A&#x27;: 0.2, &#x27;C&#x27;: 0.2, &#x27;D&#x27;: 0.4, &#x27;E&#x27;: 0.25&#125;,</span></span><br><span class="line"><span class="string">  &#x27;C&#x27;: &#123;&#x27;A&#x27;: 0.0, &#x27;B&#x27;: -0.2, &#x27;D&#x27;: 0.2, &#x27;E&#x27;: 0.25&#125;,</span></span><br><span class="line"><span class="string">  &#x27;D&#x27;: &#123;&#x27;A&#x27;: -0.2, &#x27;B&#x27;: -0.4, &#x27;C&#x27;: -0.2, &#x27;E&#x27;: 0.0&#125;,</span></span><br><span class="line"><span class="string">  &#x27;E&#x27;: &#123;&#x27;A&#x27;: -0.5, &#x27;B&#x27;: -0.25, &#x27;C&#x27;: -0.25, &#x27;D&#x27;: 0.0&#125;&#125;,</span></span><br><span class="line"><span class="string"> &#123;&#x27;A&#x27;: &#123;&#x27;B&#x27;: 5, &#x27;C&#x27;: 5, &#x27;D&#x27;: 5, &#x27;E&#x27;: 4&#125;,</span></span><br><span class="line"><span class="string">  &#x27;B&#x27;: &#123;&#x27;A&#x27;: 5, &#x27;C&#x27;: 5, &#x27;D&#x27;: 5, &#x27;E&#x27;: 4&#125;,</span></span><br><span class="line"><span class="string">  &#x27;C&#x27;: &#123;&#x27;A&#x27;: 5, &#x27;B&#x27;: 5, &#x27;D&#x27;: 5, &#x27;E&#x27;: 4&#125;,</span></span><br><span class="line"><span class="string">  &#x27;D&#x27;: &#123;&#x27;A&#x27;: 5, &#x27;B&#x27;: 5, &#x27;C&#x27;: 5, &#x27;E&#x27;: 4&#125;,</span></span><br><span class="line"><span class="string">  &#x27;E&#x27;: &#123;&#x27;A&#x27;: 4, &#x27;B&#x27;: 4, &#x27;C&#x27;: 4, &#x27;D&#x27;: 4&#125;&#125;)</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+<p>4.预测评分</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 预测评分</span></span><br><span class="line"><span class="comment"># 首先找出Alice交互过的物品哪些与要预测的物品有过”共同被统一用户评分“的经历，即存在倒排索引Ratings_item[x][y]</span></span><br><span class="line">A_history = users_rating[<span class="number">1</span>]</span><br><span class="line">candidate_items = <span class="built_in">set</span>()</span><br><span class="line"><span class="keyword">for</span> item <span class="keyword">in</span> Ratings_diffs[<span class="string">&#x27;E&#x27;</span>]:</span><br><span class="line">    <span class="keyword">if</span> item <span class="keyword">in</span> A_history:</span><br><span class="line">        candidate_items.add(item)</span><br><span class="line">weighted_score = <span class="number">0</span></span><br><span class="line">weighted_sum = <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> item <span class="keyword">in</span> Ratings_diffs[<span class="string">&#x27;E&#x27;</span>]:</span><br><span class="line">    weighted_sum += N_set[<span class="string">&#x27;E&#x27;</span>][item]</span><br><span class="line">    weighted_score += Ratings_diffs[<span class="string">&#x27;E&#x27;</span>][item] * N_set[<span class="string">&#x27;E&#x27;</span>][item]</span><br><span class="line">predict = weighted_score/weighted_sum</span><br><span class="line">predict</span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">-0.25</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="slope-one使用场景"><a href="#slope-one使用场景" class="headerlink" title="slope one使用场景"></a>slope one使用场景</h2><p>该算法适用于物品更新不频繁，数量相对较稳定并且物品数目明显小于用户数的场景。依赖用户的用户行为日志和物品偏好的相关内容。<br>优点：<br>1.算法简单，易于实现，执行效率高；<br>2.可以发现用户潜在的兴趣爱好；<br>缺点：<br>依赖用户行为，存在冷启动问题和稀疏性问题。</p>
+<h2 id="比较Slope-One、SVD、协同过滤的精度，哪一个模型的RMSE评分更低？"><a href="#比较Slope-One、SVD、协同过滤的精度，哪一个模型的RMSE评分更低？" class="headerlink" title="比较Slope One、SVD、协同过滤的精度，哪一个模型的RMSE评分更低？"></a>比较Slope One、SVD、协同过滤的精度，哪一个模型的RMSE评分更低？</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>RMSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UserCF</td>
+<td>3.80369</td>
+</tr>
+<tr>
+<td>ItemCF</td>
+<td>3.74319</td>
+</tr>
+<tr>
+<td>SVD(MF)</td>
+<td>3.75332</td>
+</tr>
+<tr>
+<td>Slope One</td>
+<td>3.91533</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h1 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h1><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xidianliutingting/article/details/51916578">https://blog.csdn.net/xidianliutingting/article/details/51916578</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%80/" rel="tag"># 推荐系统基础</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/25/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%805/" rel="prev" title="推荐系统基础5">
+      <i class="fa fa-chevron-left"></i> 推荐系统基础5
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/27/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%807/" rel="next" title="推荐系统基础7">
+      推荐系统基础7 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A16%EF%BC%9ASlope-One"><span class="nav-number">1.</span> <span class="nav-text">任务6：Slope One</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#slope-one-%E7%AE%97%E6%B3%95"><span class="nav-number">1.1.</span> <span class="nav-text">slope one 算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#slope-one-%E7%AE%97%E6%B3%95%E6%80%9D%E6%83%B3"><span class="nav-number">1.2.</span> <span class="nav-text">slope one 算法思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#slope-one-%E7%9A%84%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.3.</span> <span class="nav-text">slope one 的代码实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#slope-one%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.4.</span> <span class="nav-text">slope one使用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AF%94%E8%BE%83Slope-One%E3%80%81SVD%E3%80%81%E5%8D%8F%E5%90%8C%E8%BF%87%E6%BB%A4%E7%9A%84%E7%B2%BE%E5%BA%A6%EF%BC%8C%E5%93%AA%E4%B8%80%E4%B8%AA%E6%A8%A1%E5%9E%8B%E7%9A%84RMSE%E8%AF%84%E5%88%86%E6%9B%B4%E4%BD%8E%EF%BC%9F"><span class="nav-number">1.5.</span> <span class="nav-text">比较Slope One、SVD、协同过滤的精度，哪一个模型的RMSE评分更低？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">参考资料：</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

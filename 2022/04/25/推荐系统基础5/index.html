@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:type" content="article">
+<meta property="og:title" content="推荐系统基础5">
+<meta property="og:url" content="http://guadzilla.github.io/2022/04/25/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%805/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220425130039276.png">
+<meta property="og:image" content="https://camo.githubusercontent.com/bc712ed4c34be52a07689afee52c5024248c7cc330484e6d305de2ac799dbe3c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f323032303038323232323032353936382e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572">
+<meta property="og:image" content="https://camo.githubusercontent.com/89d841394de2508f511e1a05b87499ed3987b2abdb7a5bf8933ec5a36cf089b5/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832323232303735313339342e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572">
+<meta property="og:image" content="https://camo.githubusercontent.com/950a5f6a6bbcbb19c476595e18bbab5a441b09ae2f5d3ac19e77063ceef97fec/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832323232313632373231392e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572">
+<meta property="og:image" content="https://camo.githubusercontent.com/16fde22e8adaf3cf91458b50417ce0fa22239d474263e0b7106b7c45d437083e/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832323232323134313233312e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572">
+<meta property="og:image" content="https://camo.githubusercontent.com/eda2821a1bbb617ec7f25e57e6664891cf538106d0ec85f64e8321de32458ecc/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832323232333331333334392e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572">
+<meta property="og:image" content="https://camo.githubusercontent.com/e09db5bdf02c408d2231e52318d348d4aec26e864d22ab1a158136ee27de9da3/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832333130313531333233332e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220425134607188.png">
+<meta property="og:image" content="https://camo.githubusercontent.com/68d8995d1a9bacf4e58fa39359de71cbb99e3bf5abc5174bd1033e8b93fdae81/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832373135303233373932312e706e67237069635f63656e746572">
+<meta property="article:published_time" content="2022-04-25T13:03:02.000Z">
+<meta property="article:modified_time" content="2022-04-29T04:23:00.000Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="推荐系统基础">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220425130039276.png">
+
+<link rel="canonical" href="http://guadzilla.github.io/2022/04/25/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%805/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>推荐系统基础5 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/04/25/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%805/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          推荐系统基础5
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-04-25 21:03:02" itemprop="dateCreated datePublished" datetime="2022-04-25T21:03:02+08:00">2022-04-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-04-29 12:23:00" itemprop="dateModified" datetime="2022-04-29T12:23:00+08:00">2022-04-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">推荐系统</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>10k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>26 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h1 id="任务5：矩阵分解SVD"><a href="#任务5：矩阵分解SVD" class="headerlink" title="任务5：矩阵分解SVD"></a>任务5：矩阵分解SVD</h1><ul>
+<li>阅读<a target="_blank" rel="noopener" href="https://github.com/datawhalechina/fun-rec/blob/master/docs/%E7%AC%AC%E4%B8%80%E7%AB%A0%20%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%80/1.1%20%E5%9F%BA%E7%A1%80%E6%8E%A8%E8%8D%90%E7%AE%97%E6%B3%95/1.1.3%20%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3.md">矩阵分解基础教程</a>，<a target="_blank" rel="noopener" href="https://alyssaq.github.io/2015/20150426-simple-movie-recommender-using-svd/">代码实现</a></li>
+<li>编写SVD用于电影推荐的流程</li>
+<li>比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？</li>
+</ul>
+<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<span id="more"></span>
+<h2 id="1-隐语义模型与矩阵分解"><a href="#1-隐语义模型与矩阵分解" class="headerlink" title="1. 隐语义模型与矩阵分解"></a>1. 隐语义模型与矩阵分解</h2><p>隐语义模型（Latent factor model，简称LFM），是基于矩阵分解（Matrix Factorization，简称MF）的推荐算法。</p>
+<p>协同过滤算法的特点就是完全没有利用到物品本身或者是用户自身的属性， 仅仅利用了用户与物品的交互信息就可以实现推荐，是一个可解释性很强， 非常直观的模型， 但是也存在一些问题， 第一个就是处理稀疏矩阵的能力比较弱， 所以<strong>为了使得协同过滤更好处理稀疏矩阵问题， 增强泛化能力</strong>， 从协同过滤中衍生出矩阵分解模型或者叫隐语义模型，两者差不多说的一个意思， 就是在协同过滤共现矩阵的基础上， 使用更稠密的隐向量表示用户和物品， 挖掘用户和物品的隐含兴趣和隐含特征， 在一定程度上弥补协同过滤模型处理稀疏矩阵能力不足的问题。下图直观展现了协同过滤算法和隐语义模型（矩阵分解算法）的区别。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220425130039276.png" alt="image-20220425130039276"></p>
+<h2 id="2-隐语义模型"><a href="#2-隐语义模型" class="headerlink" title="2. 隐语义模型"></a>2. 隐语义模型</h2><p>隐语义模型最早在文本领域被提出，用于找到文本的隐含语义。在2006年， 被用于推荐中， <strong>它的核心思想是通过隐含特征（latent factor）联系用户和物品（item）， 基于用户的行为找出潜在的主题和分类</strong>。</p>
+<p>我们下面拿一个音乐评分的例子来具体看一下隐含特征的含义。</p>
+<p>假设每个用户都有自己的听歌偏好， 比如A喜欢带有<strong>小清新的</strong>， <strong>吉他伴奏的</strong>， <strong>王菲</strong>的歌曲，如果一首歌正好<strong>是王菲唱的， 并且是吉他伴奏的小清新</strong>， 那么就可以将这首歌推荐给这个用户。 也就是说是<strong>小清新， 吉他伴奏， 王菲</strong>这些元素连接起了用户和歌曲。 当然每个用户对不同的元素偏好不同， 每首歌包含的元素也不一样， 所以我们就希望找到下面的两个矩阵：</p>
+<ol>
+<li><strong>潜在因子—— 用户矩阵Q</strong> 这个矩阵表示不同用户对于不同元素的偏好程度， 1代表很喜欢， 0代表不喜欢， 比如下面这样：</li>
+</ol>
+<p><img src="https://camo.githubusercontent.com/bc712ed4c34be52a07689afee52c5024248c7cc330484e6d305de2ac799dbe3c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f323032303038323232323032353936382e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572" alt="在这里插入图片描述"></p>
+<ol>
+<li><strong>潜在因子——音乐矩阵P</strong> 表示每种音乐含有各种元素的成分， 比如下表中， 音乐A是一个偏小清新的音乐， 含有小清新的Latent Factor的成分是0.9， 重口味的成分是0.1， 优雅成分0.2…..</li>
+</ol>
+<p><img src="https://camo.githubusercontent.com/89d841394de2508f511e1a05b87499ed3987b2abdb7a5bf8933ec5a36cf089b5/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832323232303735313339342e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572" alt="在这里插入图片描述"></p>
+<p><strong>利用上面的这两个矩阵， 我们就能得出张三对音乐A的喜欢程度：</strong></p>
+<blockquote>
+<p>张三对<strong>小清新</strong>的偏好 <em> 音乐A含有<strong>小清新</strong>的成分 + 张三对<strong>重口味</strong>的偏好 </em> 音乐A含有<strong>重口味</strong>的成分 + 张三对<strong>优雅</strong>的偏好 <em> 音乐A含有<em>*优雅</em></em>的成分….,</p>
+</blockquote>
+<p>下面是对应的两个隐向量：</p>
+<p><img src="https://camo.githubusercontent.com/950a5f6a6bbcbb19c476595e18bbab5a441b09ae2f5d3ac19e77063ceef97fec/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832323232313632373231392e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572" alt="在这里插入图片描述"></p>
+<p>根据隐向量其实就可以得到张三对音乐A的打分，即： <script type="math/tex">0.6 * 0.9 + 0.8 * 0.1 + 0.1 * 0.2 + 0.1 * 0.4 + 0.7 * 0 = 0.69</script> 按照这个计算方式， 每个用户对每首歌其实都可以得到这样的分数， 最后就得到了我们的评分矩阵：</p>
+<p><img src="https://camo.githubusercontent.com/16fde22e8adaf3cf91458b50417ce0fa22239d474263e0b7106b7c45d437083e/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832323232323134313233312e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572" alt="在这里插入图片描述"></p>
+<p>这里的红色表示用户没有打分，我们通过隐向量计算得到的。</p>
+<p>上面例子中的<strong>小清晰， 重口味， 优雅，伤感，五月天</strong>这些就可以看做是隐含特征， 而通过这个隐含特征就可以把用户和音乐联系起来。其实就是找到了每个用户、每个音乐的一个 5 维的隐向量表达形式（类似embedding）。</p>
+<p>用户隐向量的每个维度代表该用户对这个隐含特征的相关性（兴趣），音乐隐向量的每个维度代表该音乐与这个隐含特征的相关性。</p>
+<p>于是隐向量就可以反映出用户的兴趣和物品的风格，并能将相似的物品推荐给相似的用户等。 <strong>有没有感觉到是把协同过滤算法进行了一种延伸， 把用户的相似性和物品的相似性通过了一个叫做隐向量的方式进行表达</strong>。</p>
+<p>但是， 真实的情况下我们其实是没有上面那两个矩阵的， 音乐那么多， 用户那么多， 我们没有办法去找一些隐特征去表示出这些东西， 另外一个问题就是即使能表示也不一定准， 对于每个用户或者每个物品的风格，我们每个人都有不同的看法。 所以事实上， 我们有的只有用户的评分矩阵， 也叫“共现矩阵”， 一般这种矩阵长这样：</p>
+<p><img src="https://camo.githubusercontent.com/eda2821a1bbb617ec7f25e57e6664891cf538106d0ec85f64e8321de32458ecc/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832323232333331333334392e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572" alt="user-item评分矩阵"></p>
+<p>上面说到过，如果直接用协同过滤算法去填充这个矩阵，很容易头部效应明显、泛化能力弱、长尾效应明显的问题。</p>
+<p>如何才能将这个矩阵转化成我们想要的隐语义模型呢？矩阵分解算法实现了这一点。</p>
+<h2 id="3-矩阵分解算法"><a href="#3-矩阵分解算法" class="headerlink" title="3. 矩阵分解算法"></a>3. 矩阵分解算法</h2><p>矩阵分解算法其实就是在<strong>想办法基于这个评分矩阵去找到上面例子中的那两个矩阵， 也就是用户兴趣和物品的隐向量表达。 具体做法是：将评分矩阵分解成Q和P两个矩阵乘积的形式， 这时候就可以基于这两个矩阵去预测某个用户对某个物品的评分了。 然后基于这个评分去进行推荐</strong>。这就是矩阵分解算法的原理。</p>
+<h3 id="矩阵分解算法原理"><a href="#矩阵分解算法原理" class="headerlink" title="矩阵分解算法原理"></a>矩阵分解算法原理</h3><p>在矩阵分解的算法框架下， <strong>我们可以通过分解协同过滤的共现矩阵来得到用户和物品的隐向量</strong>， 就是上面的用户矩阵Q和物品矩阵P， 这也是“矩阵分解”名字的由来。</p>
+<p><img src="https://camo.githubusercontent.com/e09db5bdf02c408d2231e52318d348d4aec26e864d22ab1a158136ee27de9da3/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832333130313531333233332e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572" alt="在这里插入图片描述"></p>
+<p>矩阵分解算法将 $m\times n$ 维的共现矩阵 $R$ 分解成 $m \times k$ 维的用户矩阵 $U$ 和 $k \times n$ 维的物品矩阵 $V$ 相乘的形式。 其中 $m$ 是用户数量，  $n$ 是物品数量， $k$ 是隐向量维度， 也就是隐含特征个数， 只不过这里的隐含特征变得<strong>不可解释</strong>了， <strong>即我们不知道具体含义了</strong>， 要模型自己去学。$k$ 的大小决定了隐向量表达能力的强弱， $k$ 越大， 表达信息的能力就越强， 理解起来就是把隐含特征分类划分的越具体。</p>
+<p>那么如果有了用户矩阵和物品矩阵的话， 我们就能计算用户 $u$ 对物品 $i$ 的评分， 只需要 </p>
+<script type="math/tex; mode=display">
+\operatorname{Preference}(u, i)=r_{u i}=p_{u}^{T} q_{i}=\sum_{f=1}^{F} p_{u, k} q_{k,i}</script><p>（熟悉推荐的同学应该对这个表达式非常熟悉，几乎所有预测得分都是这个计算得来的。）这里的 ${p_u}$ 就是用户 $u$ 的隐向量， 就类似与上面的张三向量， 注意这是列向量， $q_i$ 是物品 $i$ 的隐向量， 就类似于上面的音乐A向量， 这个也是列向量， 所以才用了 $p_{u}^{T} q_{i}$ 得到了一个标量， 也就是用户的最终评分， 计算过程其实和上面例子中一样。 这里的 $p_{u,k}$ 和 $q_{i,k}$ 是模型的参数， 也正是我们想办法要计算的， $p_{u,k}$度量的是用户 $u$ 对第 $k$ 个隐含特征的兴趣， 而 $q_{i,k}$ 度量了物品 $i$ 与第 $k$ 个隐含特征联系。</p>
+<h3 id="矩阵分解算法的求解"><a href="#矩阵分解算法的求解" class="headerlink" title="矩阵分解算法的求解"></a>矩阵分解算法的求解</h3><p>对矩阵进行矩阵分解的主要方法有三种：特征值分解（Eigen Decomposition）、奇异值分解（Singular Value Decomposition，SVD）和梯度下降（Gradient Descent）。</p>
+<p>其中，特征值分解只能作用于方阵，显然不适用于分解用户-物品矩阵。</p>
+<p>传统的SVD分解的具体描述如下：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220425134607188.png" alt="image-20220425134607188"></p>
+<p>可以说，奇异值分解似乎完美地解决了矩阵分解的问题，但其存在两点缺陷，使其不宜作为互联网场景下矩阵分解的主要方法。（1）SVD分解；（2）SVD分解的计算复杂度达到了 $O(mn^2)$ 的级别，这对于商品数量动辄上百万、用户数量往往上千万的互联网场景来说几乎是不可接受的。原理详解参考文章：<a target="_blank" rel="noopener" href="https://blog.csdn.net/wuzhongqiang/article/details/108168238">奇异值分解(SVD)的原理详解及推导</a></p>
+<p>由于上述两个原因，传统奇异值分解也不适用于解决大规模稀疏矩阵的矩阵分解问题。因此，梯度下降法成了进行矩阵分解的主要方法，这里对其进行具体的介绍。</p>
+<h4 id="梯度下降法：Funk-SVD"><a href="#梯度下降法：Funk-SVD" class="headerlink" title="梯度下降法：Funk-SVD"></a>梯度下降法：Funk-SVD</h4><p>2006年的Netflix Prize之后， Simon Funk公布了一个矩阵分解算法叫做<strong>Funk-SVD</strong>, 后来被Netflix Prize的冠军Koren称为<strong>Latent Factor Model(LFM)</strong>。 Funk-SVD的思想很简单： <strong>把求解上面两个矩阵的参数问题转换成一个最优化问题， 可以通过训练集里面的观察值利用最小化来学习用户矩阵和物品矩阵</strong>。</p>
+<p>我们上面已经知道， 如果有了用户矩阵和物品矩阵的话， 就能计算用户 $u$ 对物品 $i$ 的评分： <script type="math/tex">\operatorname{Preference}(u, i)=r_{u i}=p_{u}^{T} q_{i}</script> </p>
+<p>而现在， 我们有真实的 $r_{u,i}$ , 但是没有 $p_{u}^{T} q_{i}$ ，那么我们可以初始化一个啊， 随机初始化一个用户矩阵 $U$ 和一个物品矩阵 $V$ ， 然后不就有 $p_{u}^{T} q_{i}$ 了？ 当然你说， 随机初始化的肯定不准啊， 但是， 有了 $p_{u}^{T} q_{i}$ 之后， 我们就可以计算一个预测值 $\hat{r}_{u i}$ , 即 <script type="math/tex">\hat{r}_{u i}=p_{u}^{T} q_{i}</script></p>
+<p>一开始预测肯定是不准的， 那么这个预测的和真实值之间就会有一个误差： <script type="math/tex">e_{u i}=r_{u i}-\hat{r}_{u i}</script> </p>
+<p>于是可以得到一个优化目标，即总的误差平方和： <script type="math/tex">\operatorname{SSE}=\sum_{u, i} e_{u i}^{2}=\sum_{u, i}\left(r_{u i}-\sum_{k=1}^{K} p_{u,k}· q_{k, i}\right)^{2}</script> </p>
+<p>我们想办法进行训练，把 SSE 降到最小，那么我们的两个矩阵参数就可以算出来。</p>
+<p>所以就把这个问题转成了最优化的的问题， 可以利用非常标准的梯度下降过程完成。</p>
+<p>（1）确定目标函数。我们的目标函数就是：</p>
+<script type="math/tex; mode=display">
+\min _{\boldsymbol{q}^*, \boldsymbol{p}^*} \sum_{(u, i) \in K}\left(\boldsymbol{r}_{\mathrm{ui}}-p_{u}^{T} q_{i}\right)^{2}</script><p>这里的 $K$ 表示所有用户评分样本的集合。为了减少过拟合现象，加入正则化项后，目标函数如下：</p>
+<script type="math/tex; mode=display">
+\min _{\boldsymbol{q}^*, \boldsymbol{p}^*} \sum_{(u, i) \in K}\left(\boldsymbol{r}_{\mathrm{ui}}-p_{u}^{T} q_{i}\right)^{2} + \lambda ·(||q_i||^2+||p_u||^2)</script><p>（2）对目标函数求偏导，求取梯度下降的方向和幅度</p>
+<p>先对 $p_u$ 和 $q_i$ 求偏导</p>
+<script type="math/tex; mode=display">
+\operatorname{Loss} =\sum_{(u, i) \in K}\left(\boldsymbol{r}_{\mathrm{ui}}-p_{u}^{T} q_{i}\right)^{2} + \lambda ·(||q_i||^2+||p_u||^2)\\
+{\frac{\partial Loss}{\partial p_u} } = -2\ *\ (\boldsymbol{r}_{\mathrm{ui}}-p_{u}^{T} q_{i}) q_i\ +\ 2\lambda p_u \\
+{\frac{\partial Loss}{\partial q_i} } = -2\ *\ (\boldsymbol{r}_{\mathrm{ui}}-p_{u}^{T} q_{i}) p_u \ +\ 2\lambda q_i \\</script><p>（3）利用第 2 步的求导结果，沿梯度的反方向更新参数：</p>
+<script type="math/tex; mode=display">
+q_i = q_i + \gamma ((\boldsymbol{r}_{\mathrm{ui}}-p_{u}^{T} q_{i}) q_i\ -\ \lambda p_u )\\
+p_u = p_u + \gamma ((\boldsymbol{r}_{\mathrm{ui}}-p_{u}^{T} q_{i}) p_u \ -\ \lambda q_i)</script><p>其中 $\gamma$ 是学习率，原来的系数 2 可以省略，因为仅仅是放缩学习率。 </p>
+<p>（4）当迭代次数超过上限次数 $n$ ，或者损失低于阈值 $\theta$ 时，结束训练，否则循环第三步。</p>
+<p>在完成矩阵分解过程后，即可得到所有用户和物品的隐向量。在对某用户进行推荐时，可利用该用户的隐向量与所有物品的隐向量进行逐一的内积运算，得出该用户对所有物品的评分预测，再依次进行排序，得到最终的推荐列表。</p>
+<p>在了解了矩阵分解的原理之后，就可以更清楚地解释为什么矩阵分解相较协同过滤有更强的泛化能力。在矩阵分解算法中，由于隐向量的存在，使任意的用户和物品之间都可以得到预测分值。而隐向量的生成过程其实是<strong>对共现矩阵进行全局拟合</strong>的过程，因此隐向量其实是利用全局信息生成的，有<strong>更强的泛化能力</strong>；而对协同过滤来说，如果两个用户没有相同的历史行为，两个物品没有相同的人购买，那么这两个用户和两个物品的相似度都将为 0（因为协同过滤只能利用用户和物品自己的信息进行相似度计算，这就使协同过滤不具备泛化利用全局信息的能力）。</p>
+<h5 id="消除打分偏差"><a href="#消除打分偏差" class="headerlink" title="消除打分偏差"></a>消除打分偏差</h5><p>但在实际中， 单纯的 $\hat{r}_{u i}=p_{u}^{T} q_{i}$ 也是不够的， 还要考虑其他的一些因素， 比如一个评分系统， 有些固有的属性和用户物品无关， 而用户也有些属性和物品无关， 物品也有些属性和用户无关。 因此， Netfix Prize中提出了另一种LFM， 在原来的基础上加了偏置项， 来消除用户和物品打分的偏差， 即预测公式如下： <script type="math/tex">\hat{r}_{u i}=\mu+b_{u}+b_{i}+p_{u}^{T} \cdot q_{i}</script> 这个预测公式加入了3项偏置 $\mu,b_u,b_i$，作用如下：</p>
+<ul>
+<li>$\mu$：训练集中所有记录的评分的全局平均数。 在不同网站中， 因为网站定位和销售物品不同， 网站的整体评分分布也会显示差异。 比如有的网站中用户就喜欢打高分， 有的网站中用户就喜欢打低分。 而全局平均数可以表示网站本身对用户评分的影响。</li>
+<li>$b_u$：用户偏差系数， 可以使用用户 $u$ 给出的所有评分的均值， 也可以当做训练参数。 这一项表示了用户的评分习惯中和物品没有关系的那种因素。 比如有些用户比较苛刻， 对什么东西要求很高， 那么他评分就会偏低， 而有些用户比较宽容， 对什么东西都觉得不错， 那么评分就偏高。</li>
+<li>$b_i$：物品偏差系数， 可以使用物品 $i$ 收到的所有评分的均值， 也可以当做训练参数。 这一项表示了物品接受的评分中和用户没有关系的因素。 比如有些物品本身质量就很高， 因此获得的评分相对比较高， 有的物品本身质量很差， 因此获得的评分相对较低。</li>
+</ul>
+<p>加了用户和物品的打分偏差之后， 矩阵分解得到的隐向量更能反映不同用户对不同物品的“真实”态度差异， 也就更容易捕捉评价数据中有价值的信息， 从而避免推荐结果有偏。 注意此时的目标函数会发生变化： </p>
+<script type="math/tex; mode=display">
+\min _{\boldsymbol{q}^{*}, \boldsymbol{p}^{*}, \boldsymbol{b}^{*}} \sum_{(\mathrm{u}, \mathrm{i}) \in K}\left(\boldsymbol{r}_{\mathrm{ui}}-\mu-b_{\mathrm{u}}-b_{\mathrm{i}}-\boldsymbol{p}_{\mathrm{u}}^{\mathrm{T}} \boldsymbol{q}_{\mathrm{i}}\right)^{2}+\lambda\left(\left\|\boldsymbol{p}_{\mathrm{u}}\right\|^{2}+\left\|\boldsymbol{q}_{\mathrm{i}}\right\|^{2}+b_{\mathrm{u}}^{2}+b_{\mathrm{i}}^{2}\right)</script><p>此时如果把 $b_u$ 和 $b_i$ 当做训练参数的话， 那么它俩的梯度是：</p>
+<script type="math/tex; mode=display">
+\frac{\partial Loss}{\partial b_{u}}=-e_{u i}+\lambda b_{u} \\ \frac{\partial Loss}{\partial b_{i}}=-e_{u i}+\lambda b_{i}</script><p>更新公式为：</p>
+<script type="math/tex; mode=display">
+b_u = b_u + \gamma (e_{ui}-\ \lambda p_u )\\
+p_u = p_u + \gamma (e_{ui}-\ \lambda q_i)</script><p>而对于 $p_{u}$ 和$q_{i}$， 导数没有变化， 更新公式也没有变化。</p>
+<h3 id="矩阵分解算法的代码实现"><a href="#矩阵分解算法的代码实现" class="headerlink" title="矩阵分解算法的代码实现"></a>矩阵分解算法的代码实现</h3><p>我们这里用代码实现一下上面的算法来预测上一篇文章里面的那个预测 Alice 对物品 5 的评分， 看看矩阵分解到底是怎么进行预测或者是推荐的。 我把之前的例子拿过来：</p>
+<p><img src="https://camo.githubusercontent.com/68d8995d1a9bacf4e58fa39359de71cbb99e3bf5abc5174bd1033e8b93fdae81/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832373135303233373932312e706e67237069635f63656e746572" alt="在这里插入图片描述"></p>
+<p>任务就是根据这个评分矩阵， 猜测Alice对物品5的打分。</p>
+<p>在实现 MF 之前， 先来回忆一下 ItemCF 和 UserCF 对于这个问题的做法：</p>
+<p>首先 ItemCF 的做法， 根据已有的用户打分计算物品之间的相似度， 得到物品的相似度矩阵， 根据这个相似度矩阵， 选择出前 K 个与物品 5 最相似的物品， 然后基于 Alice 对这 K 个物品的得分， 猜测 Alice 对物品 5 的得分， 有一个加权的计算公式。 </p>
+<p>UserCF的做法，根据用户对其他物品的打分， 计算用户之间的相似度， 选择出与Alice最相近的K个用户， 然后基于那K个用户对物品5的打分计算出Alice对物品5的打分。 </p>
+<p>但是，这两种方式有个问题， 就是如果矩阵非常稀疏的话， 当然这个例子是个特例， 一般矩阵都是非常稀疏的， 那么预测效果就不好， 因为两个相似用户对同一物品打分的概率以及 Alice 同时对两个相似物品打分的概率可能都比较小。 另外， 这两种方法显然没有考虑到全局的物品或者用户， 只是基于了最相似的例子， 很可能有偏。</p>
+<p>那么 MF 在解决这个问题上是这么做的：</p>
+<ol>
+<li>首先， 它会先初始化用户矩阵 P 和物品矩阵 Q ，  P 的维度是<code>[users_num, K]</code>, Q的维度是<code>[item_nums, K]</code>， 这个 K 是隐向量的维度。 也就是把通过隐向量的方式把用户的兴趣和物品的特点关联了起来。 初始化这两个矩阵的方式很多， 但根据经验， 随机数需要和 $\frac{1}{\sqrt{K}}$ 成正比。 下面代码中会发现。</li>
+<li>有了两个矩阵之后， 我就可以根据用户已经打分的数据去更新参数， 这就是训练模型的过程， 方法很简单， 就是遍历用户， 对于每个用户， 遍历它打分的物品， 这样就拿到了该用户和物品的隐向量， 然后两者相乘加上偏置就是预测的评分， 这时候与真实评分有个差距， 根据上面的梯度下降就可以进行参数的更新</li>
+</ol>
+<p>这样训练完之后， 我们就可以得到用户 Alice 和物品 5 的隐向量， 根据这个就可以预测 Alice 对物品 5 的打分。下面的代码的逻辑就是上面这两步， 这里使用带有偏置项和正则项的 MF 算法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SVD</span>():</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, rating_data, F=<span class="number">5</span>, alpha=<span class="number">0.1</span>, lmbda=<span class="number">0.1</span>, max_iter=<span class="number">100</span></span>):</span></span><br><span class="line">        self.F = F           <span class="comment"># 这个表示隐向量的维度</span></span><br><span class="line">        self.P = <span class="built_in">dict</span>()          <span class="comment">#  用户矩阵P  大小是[users_num, F]</span></span><br><span class="line">        self.Q = <span class="built_in">dict</span>()     <span class="comment"># 物品矩阵Q  大小是[item_nums, F]</span></span><br><span class="line">        self.bu = <span class="built_in">dict</span>()   <span class="comment"># 用户偏差系数</span></span><br><span class="line">        self.bi = <span class="built_in">dict</span>()    <span class="comment"># 物品偏差系数</span></span><br><span class="line">        self.mu = <span class="number">1.0</span>        <span class="comment"># 全局偏差系数</span></span><br><span class="line">        self.alpha = alpha   <span class="comment"># 学习率</span></span><br><span class="line">        self.lmbda = lmbda    <span class="comment"># 正则项系数</span></span><br><span class="line">        self.max_iter = max_iter    <span class="comment"># 最大迭代次数</span></span><br><span class="line">        self.rating_data = rating_data <span class="comment"># 评分矩阵</span></span><br></pre></td></tr></table></figure>
+<p>​        </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">    <span class="comment"># 初始化矩阵P和Q, 方法很多， 一般用随机数填充， 但随机数大小有讲究， 根据经验， 随机数需要和1/sqrt(F)成正比</span></span><br><span class="line">    cnt = <span class="number">0</span>    <span class="comment"># 统计总的打分数， 初始化mu用</span></span><br><span class="line">    <span class="keyword">for</span> user, items <span class="keyword">in</span> self.rating_data.items():</span><br><span class="line">        self.P[user] = [random.random() / math.sqrt(self.F)  <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, F)]</span><br><span class="line">        self.bu[user] = <span class="number">0</span></span><br><span class="line">        cnt += <span class="built_in">len</span>(items) </span><br><span class="line">        <span class="keyword">for</span> item, rating <span class="keyword">in</span> items.items():</span><br><span class="line">            <span class="keyword">if</span> item <span class="keyword">not</span> <span class="keyword">in</span> self.Q:</span><br><span class="line">                self.Q[item] = [random.random() / math.sqrt(self.F) <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, F)]</span><br><span class="line">                self.bi[item] = <span class="number">0</span></span><br><span class="line">    self.mu /= cnt</span><br><span class="line">    </span><br><span class="line"><span class="comment"># 有了矩阵之后， 就可以进行训练, 这里使用随机梯度下降的方式训练参数P和Q</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">train</span>(<span class="params">self</span>):</span></span><br><span class="line">    <span class="keyword">for</span> step <span class="keyword">in</span> <span class="built_in">range</span>(self.max_iter):</span><br><span class="line">        <span class="keyword">for</span> user, items <span class="keyword">in</span> self.rating_data.items():</span><br><span class="line">            <span class="keyword">for</span> item, rui <span class="keyword">in</span> items.items():</span><br><span class="line">                rhat_ui = self.predict(user, item)   <span class="comment"># 得到预测评分</span></span><br><span class="line">                <span class="comment"># 计算误差</span></span><br><span class="line">                e_ui = rui - rhat_ui</span><br><span class="line">                </span><br><span class="line">                self.bu[user] += self.alpha * (e_ui - self.lmbda * self.bu[user])</span><br><span class="line">                self.bi[item] += self.alpha * (e_ui - self.lmbda * self.bi[item])</span><br><span class="line">                <span class="comment"># 随机梯度下降更新梯度</span></span><br><span class="line">                <span class="keyword">for</span> k <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, self.F):</span><br><span class="line">                    self.P[user][k] += self.alpha * (e_ui*self.Q[item][k] - self.lmbda * self.P[user][k])</span><br><span class="line">                    self.Q[item][k] += self.alpha * (e_ui*self.P[user][k] - self.lmbda * self.Q[item][k])</span><br><span class="line">                </span><br><span class="line">        self.alpha *= <span class="number">0.1</span>    <span class="comment"># 每次迭代步长要逐步缩小</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 预测user对item的评分， 这里没有使用向量的形式</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">predict</span>(<span class="params">self, user, item</span>):</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">sum</span>(self.P[user][f] * self.Q[item][f] <span class="keyword">for</span> f <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, self.F)) + self.bu[user] + self.bi[item] + self.mu   </span><br></pre></td></tr></table></figure>
+<p>下面我建立一个字典来存放数据， 之所以用字典， 是因为很多时候矩阵非常的稀疏， 如果用pandas的话， 会出现很多Nan的值， 反而不好处理。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义数据集， 也就是那个表格， 注意这里我们采用字典存放数据， 因为实际情况中数据是非常稀疏的， 很少有情况是现在这样</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loadData</span>():</span></span><br><span class="line">    rating_data=&#123;<span class="number">1</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">4</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">4</span>&#125;,</span><br><span class="line">           <span class="number">2</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">3</span>&#125;,</span><br><span class="line">           <span class="number">3</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">4</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">4</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">5</span>&#125;,</span><br><span class="line">           <span class="number">4</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">4</span>&#125;,</span><br><span class="line">           <span class="number">5</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">1</span>&#125;</span><br><span class="line">          &#125;</span><br><span class="line">    <span class="keyword">return</span> rating_data</span><br><span class="line"> </span><br><span class="line"><span class="comment"># 接下来就是训练和预测</span></span><br><span class="line">rating_data = loadData()</span><br><span class="line">basicsvd = SVD(rating_data, F=<span class="number">10</span>)</span><br><span class="line">basicsvd.train()</span><br><span class="line"><span class="keyword">for</span> item <span class="keyword">in</span> [<span class="string">&#x27;E&#x27;</span>]:</span><br><span class="line">    <span class="built_in">print</span>(item, basicsvd.predict(<span class="number">1</span>, item))</span><br><span class="line"> </span><br><span class="line"><span class="comment">## 结果：</span></span><br><span class="line">E <span class="number">3.252210242858994</span></span><br></pre></td></tr></table></figure>
+<p>通过这个方式， 得到的预测评分是3.25， 这个和隐向量的维度， 训练次数和训练方式有关， 这里只说一下这个东西应该怎么用， 具体结果可以不用纠结。</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/Guadzilla/recpre/tree/master/task5">pytorch的代码实现</a>已给出。</p>
+<h2 id="比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？"><a href="#比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？" class="headerlink" title="比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？"></a>比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？</h2><p>$RMSE=\sqrt{\frac{1}{m}\sum^m_{i=1}(f(x_i)-y_i)^2}$</p>
+<p>用基于皮尔逊相似度的 ItemCF 协同过滤算法，推荐的 TopN 物品的评分与对应真实评分计算 RMSE 。</p>
+<p>SVD 算法可以计算所有用户对所有物品的评分，所以计算所有验证集的预测得分与对应真实评分计算 RMSE。</p>
+<h1 id="课后思考"><a href="#课后思考" class="headerlink" title="课后思考"></a>课后思考</h1><ol>
+<li><p>矩阵分解算法后续有哪些改进呢？针对这些改进，是为了解决什么的问题呢？请大家自行探索</p>
+<p>SVD，计算复杂度太高。Funk-SVD，用梯度下降法，大大减少复杂度。BiasSVD，消除用户和物品打分偏差。SVD++，考虑邻域影响。TSVD，加入时间信息。</p>
+</li>
+<li><p>矩阵分解的优缺点分析</p>
+<ul>
+<li>优点：<ul>
+<li>泛化能力强： 一定程度上解决了稀疏问题</li>
+<li>空间复杂度低： 由于用户和物品都用隐向量的形式存放， 少了用户和物品相似度矩阵， 空间复杂度由$n^2$降到了$(n+m)*f$</li>
+<li>更好的扩展性和灵活性：矩阵分解的最终产物是用户和物品隐向量， 这个深度学习的embedding思想不谋而合， 因此矩阵分解的结果非常便于与其他特征进行组合和拼接， 并可以与深度学习无缝结合。</li>
+</ul>
+</li>
+</ul>
+<p>但是， 矩阵分解算法依然是只用到了评分矩阵， 没有考虑到用户特征， 物品特征和上下文特征， 这使得矩阵分解丧失了利用很多有效信息的机会， 同时在缺乏用户历史行为的时候， 无法进行有效的推荐。 所以为了解决这个问题， <strong>逻辑回归模型及后续的因子分解机模型</strong>， 凭借其天然的融合不同特征的能力， 逐渐在推荐系统领域得到了更广泛的应用。</p>
+</li>
+</ol>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li>王喆 - 《深度学习推荐系统》</li>
+<li>项亮 - 《推荐系统实战》</li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/wuzhongqiang/article/details/108168238">奇异值分解(SVD)的原理详解及推导</a></li>
+<li><a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=5197422&amp;tag=1">Matrix factorization techniques for recommender systems论文</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/wuzhongqiang/article/details/108173885">隐语义模型(LFM)和矩阵分解(MF)</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%80/" rel="tag"># 推荐系统基础</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/23/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%804/" rel="prev" title="推荐系统基础4">
+      <i class="fa fa-chevron-left"></i> 推荐系统基础4
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/26/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%806/" rel="next" title="推荐系统基础6">
+      推荐系统基础6 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A15%EF%BC%9A%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3SVD"><span class="nav-number">1.</span> <span class="nav-text">任务5：矩阵分解SVD</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E9%9A%90%E8%AF%AD%E4%B9%89%E6%A8%A1%E5%9E%8B%E4%B8%8E%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3"><span class="nav-number">1.1.</span> <span class="nav-text">1. 隐语义模型与矩阵分解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E9%9A%90%E8%AF%AD%E4%B9%89%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.2.</span> <span class="nav-text">2. 隐语义模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3%E7%AE%97%E6%B3%95"><span class="nav-number">1.3.</span> <span class="nav-text">3. 矩阵分解算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86"><span class="nav-number">1.3.1.</span> <span class="nav-text">矩阵分解算法原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3%E7%AE%97%E6%B3%95%E7%9A%84%E6%B1%82%E8%A7%A3"><span class="nav-number">1.3.2.</span> <span class="nav-text">矩阵分解算法的求解</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D%E6%B3%95%EF%BC%9AFunk-SVD"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">梯度下降法：Funk-SVD</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%B6%88%E9%99%A4%E6%89%93%E5%88%86%E5%81%8F%E5%B7%AE"><span class="nav-number">1.3.2.1.1.</span> <span class="nav-text">消除打分偏差</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3%E7%AE%97%E6%B3%95%E7%9A%84%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.3.3.</span> <span class="nav-text">矩阵分解算法的代码实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AF%94%E8%BE%83SVD%E4%B8%8E%E5%8D%8F%E5%90%8C%E8%BF%87%E6%BB%A4%E7%9A%84%E7%B2%BE%E5%BA%A6%EF%BC%8C%E5%93%AA%E4%B8%80%E4%B8%AA%E6%A8%A1%E5%9E%8B%E7%9A%84RMSE%E8%AF%84%E5%88%86%E6%9B%B4%E4%BD%8E%EF%BC%9F"><span class="nav-number">1.4.</span> <span class="nav-text">比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%BE%E5%90%8E%E6%80%9D%E8%80%83"><span class="nav-number">2.</span> <span class="nav-text">课后思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">2.0.1.</span> <span class="nav-text">参考资料</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

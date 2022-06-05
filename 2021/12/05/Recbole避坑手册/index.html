@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="RecBole是个非常好的开源库，这几天做评测的时候用上了，奈何本人能力有限，遇到了非常多bug（可能是自己行为造成的），简单记录一下。可以参考这个：RecBole小白入门系列_Turinger_2000的博客-CSDN博客 使用方法就是：RUCAIBox&#x2F;RecBole (github.com)，下载下来unzip或者clone到设备上。然后再RecBole主目录下编写一个test.yaml文件">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Recbole避坑手册">
+<meta property="og:url" content="http://guadzilla.github.io/2021/12/05/Recbole%E9%81%BF%E5%9D%91%E6%89%8B%E5%86%8C/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="RecBole是个非常好的开源库，这几天做评测的时候用上了，奈何本人能力有限，遇到了非常多bug（可能是自己行为造成的），简单记录一下。可以参考这个：RecBole小白入门系列_Turinger_2000的博客-CSDN博客 使用方法就是：RUCAIBox&#x2F;RecBole (github.com)，下载下来unzip或者clone到设备上。然后再RecBole主目录下编写一个test.yaml文件">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205143321872.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205143831872.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205144208594.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205144708967.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205145228872.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205145659369.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205150832821.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205163312199.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205140943532.png">
+<meta property="article:published_time" content="2021-12-05T08:44:25.478Z">
+<meta property="article:modified_time" content="2022-03-28T02:44:41.387Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="RecBole">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205143321872.png">
+
+<link rel="canonical" href="http://guadzilla.github.io/2021/12/05/Recbole%E9%81%BF%E5%9D%91%E6%89%8B%E5%86%8C/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Recbole避坑手册 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2021/12/05/Recbole%E9%81%BF%E5%9D%91%E6%89%8B%E5%86%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Recbole避坑手册
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-12-05 16:44:25" itemprop="dateCreated datePublished" datetime="2021-12-05T16:44:25+08:00">2021-12-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-28 10:44:41" itemprop="dateModified" datetime="2022-03-28T10:44:41+08:00">2022-03-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E4%BB%A3%E7%A0%81%E9%98%85%E8%AF%BB/" itemprop="url" rel="index"><span itemprop="name">代码阅读</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>10 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>RecBole是个非常好的开源库，这几天做评测的时候用上了，奈何本人能力有限，遇到了非常多bug（可能是自己行为造成的），简单记录一下。可以参考这个：<a target="_blank" rel="noopener" href="https://blog.csdn.net/turinger_2000/category_10624007.html">RecBole小白入门系列_Turinger_2000的博客-CSDN博客</a></p>
+<p><strong>使用方法</strong>就是：<a target="_blank" rel="noopener" href="https://github.com/RUCAIBox/RecBole">RUCAIBox/RecBole (github.com)</a>，下载下来unzip或者clone到设备上。然后再RecBole主目录下编写一个test.yaml文件记录一些配置，再运行run_recbole.py就可以。test.yaml大概要设置4类东西：dateset setting, model setting, train setting, evaluate setting.</p>
+<p>整个项目文件如下，几个比较重要的文件夹和文件标出来了，后面会说到。</p>
+<span id="more"></span>
+
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205143321872.png" alt="image-20211205143321872"></p>
+<p>接下来以一个<strong>用自己数据集跑SASRec模型</strong>的例子说明如何使用RecBole。</p>
+<h2 id="配置test-yaml文件"><a href="#配置test-yaml文件" class="headerlink" title="配置test.yaml文件"></a>配置test.yaml文件</h2><h3 id="构造数据集——data-setting"><a href="#构造数据集——data-setting" class="headerlink" title="构造数据集——data setting"></a>构造数据集——data setting</h3><p>如果想跑自己的实验，那么很重要的一件事就是构造自己的数据集，recbole要求个人首先构建可以处理的原子文件，然后就可以传给模型处理了。详细见：<a target="_blank" rel="noopener" href="https://recbole.io/cn/data_flow.html">数据流 | 伯乐 (recbole.io)</a></p>
+<p>根据<a target="_blank" rel="noopener" href="https://recbole.io/cn/atomic_files.html">原子文件 | 伯乐 (recbole.io)</a>，Sequential模型只需要.inter的原子文件，如下图：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205143831872.png" alt="image-20211205143831872"></p>
+<p>虽然不知道.inter 是什么文件，但是可以看以下模型本身给的数据集以及处理好的原子文件模仿着构造。数据集保存在RecBole/dataset/ml-100k下（以ml-100k数据集为例），找到ml-100k.inter，用记事本打开格式如下：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205144208594.png" alt="image-20211205144208594"></p>
+<p>BPR和CF等general model可能会用到rating（用户评分），timestamp。但是Sequential model一般只需要timestamp把点击行为构成对应用户的序列就行，想跑的SASRec论文附的代码里，对数据集的处理是：只保留user_id和item_id两列，按点击顺序存储。我的数据集book长这个样子：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205144708967.png" alt="image-20211205144708967"></p>
+<p>只有两列特征user_id和item_id，看起来好像很接近，但是踩坑穿越回来的我可以告诉你，这里必须得有timestamp一列，recbole就是这么处理sequential model的数据集的，没有办法。那添加什么样的timestamp呢？book数据集是按点击顺序存储的（user_id已经重新从0开始标号），所以其实只要加个递增的timestamp就行了，这里用pandas简单处理下多加一列就行。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205145228872.png" alt="image-20211205145228872"></p>
+<p>注意，这里用pandas处理的时候，顺便把列名改了。user_id和item_id后面加上”:token”，timestamp后面加上”:float”。RecBole要求这么做，后面也会说到。这样处理好文件后，pandas输出的一般是csv，重命名的时候要改成.inter后缀。然后在dataset下新建一个文件夹，起名为你的dataset名称xxx（可以自己起，这个很重要），然后.inter文件也要命名为xxx.inter，如图所示：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205145659369.png" alt="image-20211205145659369"></p>
+<p>然后我们在RecBole主目录下新建一个test.yaml文件，在里面输入：（暂时不明白没事，抄下来就行）</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># dataset config</span></span><br><span class="line">field_separator: <span class="string">&quot;,&quot;</span>  <span class="comment">#指定数据集field的分隔符</span></span><br><span class="line">seq_separator: <span class="string">&quot; &quot;</span>   <span class="comment">#指定数据集中token_seq或者float_seq域里的分隔符</span></span><br><span class="line">USER_ID_FIELD: user_id <span class="comment">#指定用户id域</span></span><br><span class="line">ITEM_ID_FIELD: item_id <span class="comment">#指定物品id域</span></span><br><span class="line">TIME_FIELD: timestamp  <span class="comment">#指定时间域</span></span><br><span class="line">NEG_PREFIX: neg_   <span class="comment">#指定负采样前缀</span></span><br><span class="line"><span class="comment">#指定从什么文件里读什么列，这里就是从book.inter里面读取user_id, item_id,timestamp这四列</span></span><br><span class="line">load_col:</span><br><span class="line">  inter: [user_id, item_id, timestamp]</span><br></pre></td></tr></table></figure>
+
+<p>需要注意前两条separator，csv文件的话默认分隔符是”,”，还有最后一行local:这里按照数据集的列指定就行，到此数据集基本构造好了。</p>
+<h3 id="用Sequential-model类跑模型——model-setting"><a href="#用Sequential-model类跑模型——model-setting" class="headerlink" title="用Sequential model类跑模型——model setting"></a>用Sequential model类跑模型——model setting</h3><p>以SASRec为例，想跑一个模型，如何看这个模型需要的参数？到 RecBole/recbole/properties/model 底下找到对应模型的yaml文件，打开以后大概长这样。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205150832821.png" alt="image-20211205150832821"></p>
+<p>这里包含了模型需要的参数，每次调用都到这里改很麻烦，所以recbole可以实现用test.yaml的设置覆盖具体模型的设置，所以只要在test.yaml（主目录下的那个配置文件）里改我们添加，并做一点修改：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">n_layers: <span class="number">2</span></span><br><span class="line">n_heads: <span class="number">2</span></span><br><span class="line">hidden_size: <span class="number">100</span></span><br><span class="line">inner_size: <span class="number">256</span></span><br><span class="line">hidden_dropout_prob: <span class="number">0.5</span></span><br><span class="line">attn_dropout_prob: <span class="number">0.5</span></span><br><span class="line">hidden_act: <span class="string">&#x27;gelu&#x27;</span></span><br><span class="line">layer_norm_eps: <span class="number">1e-12</span></span><br><span class="line">initializer_range: <span class="number">0.02</span></span><br><span class="line">loss_type: <span class="string">&#x27;CE&#x27;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="训练设置——train-setting"><a href="#训练设置——train-setting" class="headerlink" title="训练设置——train setting"></a>训练设置——train setting</h3><p>通用的训练设置也要写到test.yaml中：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># training settings</span><br><span class="line">epochs: 500  				#训练的最大轮数</span><br><span class="line">train_batch_size: 20 #2048 	#训练的batch_size</span><br><span class="line">learner: adam 				#使用的pytorch内置优化器</span><br><span class="line">learning_rate: 0.001 		#学习率</span><br><span class="line">training_neg_sample_num: 0 	#负采样数目</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="评估设置——evaluate-setting"><a href="#评估设置——evaluate-setting" class="headerlink" title="评估设置——evaluate setting"></a>评估设置——evaluate setting</h3><p>通用的评估设置也要写道test.yaml中：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># evalution settings</span><br><span class="line">eval_step: 1 				#每次训练后做evalaution的次数</span><br><span class="line">eval_setting: RO_RS,full 	#对数据随机重排，设置按比例划分数据集，且使用全排序</span><br><span class="line">group_by_user: True 		#是否将一个user的记录划到一个组里，当eval_setting使用RO_RS的时候该项必须是True</span><br><span class="line">split_ratio: [0.8,0.1,0.1] 	#切分比例</span><br><span class="line">metrics: [&quot;Recall&quot;, &quot;MRR&quot;,&quot;NDCG&quot;,&quot;Hit&quot;,&quot;Precision&quot;] #评测标准</span><br><span class="line">topk: [10] #评测标准使用topk，设置成10评测标准就是[&quot;Recall@10&quot;, &quot;MRR@10&quot;, &quot;NDCG@10&quot;, &quot;Hit@10&quot;, &quot;Precision@10&quot;]</span><br><span class="line">valid_metric: MRR@10 		#选取哪个评测标准作为作为提前停止训练的标准</span><br><span class="line">stopping_step: 10 			#控制训练收敛的步骤数，在该步骤数内若选取的评测标准没有什么变化，就可以提前停止了</span><br><span class="line">eval_batch_size: 4096 		#评测的batch_size</span><br></pre></td></tr></table></figure>
+
+<p>recbole实现了earlystopping早停策略，可以设置控制收敛的步骤数。</p>
+<p>eval_setting，可以设置不同的数据切分方式，具体可见<a target="_blank" rel="noopener" href="https://recbole.io/cn/evaluation.html">评测 | 伯乐 (recbole.io)</a>，大致如下：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205163312199.png" alt="image-20211205163312199"></p>
+<h2 id="run！跑起来吧，baseline！"><a href="#run！跑起来吧，baseline！" class="headerlink" title="run！跑起来吧，baseline！"></a>run！跑起来吧，baseline！</h2><p>我们cd到RecBole目录下，此时数据集已经准备好，test.yaml文件也已经写好，可以开始跑实验了，用以下指令：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python run_recbole.py --model=SASRec --dataset=book ----config_files=test.yaml</span><br></pre></td></tr></table></figure>
+
+<p>如果看不懂参数的话，点进run_recbole.py看一下就明白了！</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>RecBole是个集成度很高，也比较方便用于复现一些基本推荐模型的开源库（在此致敬中国人民大学AI BOX小组！），需要用recbole跑自己的baseline时，只需要三步：</p>
+<ol>
+<li>构造满足原子文件的数据集</li>
+<li>写好.yaml格式的配置文件</li>
+<li>run！</li>
+</ol>
+<h2 id="记录一些遇到的坑"><a href="#记录一些遇到的坑" class="headerlink" title="记录一些遇到的坑"></a>记录一些遇到的坑</h2><h3 id="1-neg-sampling-不能使用-‘CE’-loss"><a href="#1-neg-sampling-不能使用-‘CE’-loss" class="headerlink" title="1. neg_sampling 不能使用 ‘CE’ loss"></a>1. neg_sampling 不能使用 ‘CE’ loss</h3><p>在配置文件中加上一行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">neg_sampling: (注意这里冒号后面有个空格)</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="2-使用不上gpu"><a href="#2-使用不上gpu" class="headerlink" title="2.使用不上gpu"></a>2.使用不上gpu</h3><p><strong>问题描述：</strong>程序可以跑起来，但是nvtop看不到它在gpu上运行。并且无论如何修改配置文件都没有用。非常奇怪的问题。检查torch.cuda.is_available()的时候发现，居然输出False，所以原因是用不了CUDA。</p>
+<p><strong>问题原因</strong>：用不了CUDA。</p>
+<p>用conda list检查安装的库时发现，默认安装的torch是cpu的</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20211205140943532.png" alt="image-20211205140943532"></p>
+<blockquote>
+<p>左边是默认安装的，想了一宿也没想明白为什么默认安装cpu版本</p>
+</blockquote>
+<p>卸载cpu版本再安装cuda版本有点麻烦，所以我直接新建了一个环境，并且自带torch=1.10，然后再根据依赖安装，使用命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -r requirement.txt</span><br></pre></td></tr></table></figure>
+
+<p>这里不用担心torch会被覆盖，因为torch版本大于1.17就会自动跳过了。</p>
+<p>然后总可以跑了吧，运行下面指令（用RecBole需要这样输）</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python run_recbole.py --model=BERT4Rec --dataset=book ----config_files=bert4rec.yaml</span><br></pre></td></tr></table></figure>
+
+<p>按理说此时torch是建环境时我安装的cuda版本，一定不是cpu版本，然而每次运行仍然是device=cpu。实在让人崩溃！</p>
+<p><strong>解决方案</strong>：</p>
+<p>最后debug多轮，寻找到的解决方案是：</p>
+<ul>
+<li>在run_recbole.py里import torch，并且打印torch.cuda.is_available()</li>
+</ul>
+<p>这样做合理的<strong>可能的原因</strong>：</p>
+<p>可能项目某个地方import torch，import进来的torch是cpu版本的，所以提前import可以解决。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/RecBole/" rel="tag"># RecBole</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/11/23/%E5%8D%8F%E5%90%8C%E8%BF%87%E6%BB%A4/" rel="prev" title="（待更新）推荐系统：经典算法——协同过滤（Collebrative Filtering）">
+      <i class="fa fa-chevron-left"></i> （待更新）推荐系统：经典算法——协同过滤（Collebrative Filtering）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/03/07/SSRM/" rel="next" title="论文笔记：《Streaming Session-based Recommendation》">
+      论文笔记：《Streaming Session-based Recommendation》 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEtest-yaml%E6%96%87%E4%BB%B6"><span class="nav-number">1.</span> <span class="nav-text">配置test.yaml文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E9%80%A0%E6%95%B0%E6%8D%AE%E9%9B%86%E2%80%94%E2%80%94data-setting"><span class="nav-number">1.1.</span> <span class="nav-text">构造数据集——data setting</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%A8Sequential-model%E7%B1%BB%E8%B7%91%E6%A8%A1%E5%9E%8B%E2%80%94%E2%80%94model-setting"><span class="nav-number">1.2.</span> <span class="nav-text">用Sequential model类跑模型——model setting</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E8%AE%BE%E7%BD%AE%E2%80%94%E2%80%94train-setting"><span class="nav-number">1.3.</span> <span class="nav-text">训练设置——train setting</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%84%E4%BC%B0%E8%AE%BE%E7%BD%AE%E2%80%94%E2%80%94evaluate-setting"><span class="nav-number">1.4.</span> <span class="nav-text">评估设置——evaluate setting</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#run%EF%BC%81%E8%B7%91%E8%B5%B7%E6%9D%A5%E5%90%A7%EF%BC%8Cbaseline%EF%BC%81"><span class="nav-number">2.</span> <span class="nav-text">run！跑起来吧，baseline！</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%B0%E5%BD%95%E4%B8%80%E4%BA%9B%E9%81%87%E5%88%B0%E7%9A%84%E5%9D%91"><span class="nav-number">4.</span> <span class="nav-text">记录一些遇到的坑</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-neg-sampling-%E4%B8%8D%E8%83%BD%E4%BD%BF%E7%94%A8-%E2%80%98CE%E2%80%99-loss"><span class="nav-number">4.1.</span> <span class="nav-text">1. neg_sampling 不能使用 ‘CE’ loss</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%BD%BF%E7%94%A8%E4%B8%8D%E4%B8%8Agpu"><span class="nav-number">4.2.</span> <span class="nav-text">2.使用不上gpu</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

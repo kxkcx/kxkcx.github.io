@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="完整的代码注释：https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Paper_notebook&#x2F;tree&#x2F;main&#x2F;SASRec 论文笔记：https:&#x2F;&#x2F;guadzilla.github.io&#x2F;2021&#x2F;11&#x2F;03&#x2F;SASRec&#x2F;  collections.defaultdict(list)1class collections.defaultdict(default_factory&#x3D;N">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SASRec代码笔记">
+<meta property="og:url" content="http://guadzilla.github.io/2021/11/06/SASRec%E4%BB%A3%E7%A0%81/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="完整的代码注释：https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Paper_notebook&#x2F;tree&#x2F;main&#x2F;SASRec 论文笔记：https:&#x2F;&#x2F;guadzilla.github.io&#x2F;2021&#x2F;11&#x2F;03&#x2F;SASRec&#x2F;  collections.defaultdict(list)1class collections.defaultdict(default_factory&#x3D;N">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-11-06T12:39:02.000Z">
+<meta property="article:modified_time" content="2021-11-29T09:57:03.739Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="pytorch">
+<meta property="article:tag" content="SASRec">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://guadzilla.github.io/2021/11/06/SASRec%E4%BB%A3%E7%A0%81/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>SASRec代码笔记 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2021/11/06/SASRec%E4%BB%A3%E7%A0%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          SASRec代码笔记
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-06 20:39:02" itemprop="dateCreated datePublished" datetime="2021-11-06T20:39:02+08:00">2021-11-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-29 17:57:03" itemprop="dateModified" datetime="2021-11-29T17:57:03+08:00">2021-11-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E4%BB%A3%E7%A0%81%E9%98%85%E8%AF%BB/" itemprop="url" rel="index"><span itemprop="name">代码阅读</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>8.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>22 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<p>完整的代码注释：<a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Paper_notebook/tree/main/SASRec">https://github.com/Guadzilla/Paper_notebook/tree/main/SASRec</a></p>
+<p>论文笔记：<a href="https://guadzilla.github.io/2021/11/03/SASRec/">https://guadzilla.github.io/2021/11/03/SASRec/</a></p>
+<hr>
+<h2 id="collections-defaultdict-list"><a href="#collections-defaultdict-list" class="headerlink" title="collections.defaultdict(list)"></a>collections.defaultdict(list)</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">collections</span>.<span class="title">defaultdict</span>(<span class="params">default_factory=<span class="literal">None</span>, /[, ...]</span>)</span></span><br></pre></td></tr></table></figure>
+
+<p>返回一个新的类似字典的对象。<code>defaultdict</code> 是内置 <code>dict </code>类的子类。 它重载了一个方法并添加了一个可写的实例变量。</p>
+<p>本对象包含一个名为 <code>default_factory</code> 的属性，构造时，第一个参数用于为该属性提供初始值，默认为 None。所有其他参数（包括关键字参数）都相当于传递给 dict 的构造函数。</p>
+<p>使用<code> defulydict(list)</code>实例化对象时， <code>default_factory=list</code>，可以很轻松地<strong>将（键-值对组成的）序列转换为（键-列表组成的）字典</strong>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">s = [(<span class="string">&#x27;yellow&#x27;</span>, <span class="number">1</span>), (<span class="string">&#x27;blue&#x27;</span>, <span class="number">2</span>), (<span class="string">&#x27;yellow&#x27;</span>, <span class="number">3</span>), (<span class="string">&#x27;blue&#x27;</span>, <span class="number">4</span>), (<span class="string">&#x27;red&#x27;</span>, <span class="number">1</span>)]</span><br><span class="line">d = defaultdict(<span class="built_in">list</span>)</span><br><span class="line"><span class="keyword">for</span> k, v <span class="keyword">in</span> s:</span><br><span class="line">    d[k].append(v)</span><br><span class="line"></span><br><span class="line"><span class="built_in">sorted</span>(d.items())</span><br><span class="line"><span class="comment"># 输出：[(&#x27;blue&#x27;, [2, 4]), (&#x27;red&#x27;, [1]), (&#x27;yellow&#x27;, [1, 3])]</span></span><br></pre></td></tr></table></figure>
+
+<p>当字典中没有的键第一次出现时，python自动为其返回一个空列表，list.append()会将值添加进新列表；再次遇到相同的键时，list.append()将其它值再添加进该列表。</p>
+<span id="more"></span>
+
+<h2 id="Python自定义多线程"><a href="#Python自定义多线程" class="headerlink" title="Python自定义多线程"></a>Python自定义多线程</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">random_neq</span>(<span class="params">l, r, s</span>):</span></span><br><span class="line">    t = np.random.randint(l, r)</span><br><span class="line">    <span class="keyword">while</span> t <span class="keyword">in</span> s:</span><br><span class="line">        t = np.random.randint(l, r)</span><br><span class="line">    <span class="keyword">return</span> t</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sample_function</span>(<span class="params">user_train, usernum, itemnum, batch_size, maxlen, result_queue, SEED</span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">sample</span>():</span></span><br><span class="line"></span><br><span class="line">        user = np.random.randint(<span class="number">1</span>, usernum + <span class="number">1</span>)    <span class="comment"># 随机采样user id，注意是从1开始的</span></span><br><span class="line">        <span class="keyword">while</span> <span class="built_in">len</span>(user_train[user]) &lt;= <span class="number">1</span>: user = np.random.randint(<span class="number">1</span>, usernum + <span class="number">1</span>)  <span class="comment"># 长度小于1的训练集不要</span></span><br><span class="line"></span><br><span class="line">        seq = np.zeros([maxlen], dtype=np.int32)    <span class="comment"># seq序列，长度固定为maxlen，用0在前面padding补上长度，例：[0,0,...,0,23,15,2,6]</span></span><br><span class="line">        pos = np.zeros([maxlen], dtype=np.int32)</span><br><span class="line">        neg = np.zeros([maxlen], dtype=np.int32)</span><br><span class="line">        nxt = user_train[user][-<span class="number">1</span>]  <span class="comment"># user_train的最后一个item取为nxt</span></span><br><span class="line">        idx = maxlen - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">        ts = <span class="built_in">set</span>(user_train[user])  <span class="comment"># ts为序列的item集合</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">reversed</span>(user_train[user][:-<span class="number">1</span>]):   <span class="comment"># 从后往前遍历user_train,idx为当前要填充的下标</span></span><br><span class="line">            seq[idx] = i</span><br><span class="line">            pos[idx] = nxt</span><br><span class="line">            <span class="keyword">if</span> nxt != <span class="number">0</span>: neg[idx] = random_neq(<span class="number">1</span>, itemnum + <span class="number">1</span>, ts)  <span class="comment"># 生成的负样本不能取该序列item集合里的item</span></span><br><span class="line">            nxt = i</span><br><span class="line">            idx -= <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> idx == -<span class="number">1</span>: <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> (user, seq, pos, neg)    <span class="comment"># 返回一次采样，(用户id,训练序列，label序列，负样本序列)</span></span><br><span class="line"></span><br><span class="line">    np.random.seed(SEED)</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:     <span class="comment"># 采样一个batch_size大小的数据样本，打包成一个batch，放到线程队列里</span></span><br><span class="line">        one_batch = []</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(batch_size):</span><br><span class="line">            one_batch.append(sample())</span><br><span class="line"></span><br><span class="line">        result_queue.put(<span class="built_in">zip</span>(*one_batch))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">WarpSampler</span>(<span class="params"><span class="built_in">object</span></span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, User, usernum, itemnum, batch_size=<span class="number">64</span>, maxlen=<span class="number">10</span>, n_workers=<span class="number">1</span></span>):</span></span><br><span class="line">        self.result_queue = Queue(maxsize=n_workers * <span class="number">10</span>)   <span class="comment"># 长度为10的线程队列</span></span><br><span class="line">        self.processors = []</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n_workers):</span><br><span class="line">            self.processors.append(     <span class="comment"># Process()进程的类, target：要调用的对象即sampler_function，args：调用该对象要接受的参数</span></span><br><span class="line">                Process(target=sample_function, args=(User,</span><br><span class="line">                                                      usernum,</span><br><span class="line">                                                      itemnum,</span><br><span class="line">                                                      batch_size,</span><br><span class="line">                                                      maxlen,</span><br><span class="line">                                                      self.result_queue,</span><br><span class="line">                                                      np.random.randint(<span class="number">2e9</span>)</span><br><span class="line">                                                      )))</span><br><span class="line">            self.processors[-<span class="number">1</span>].daemon = <span class="literal">True</span></span><br><span class="line">            self.processors[-<span class="number">1</span>].start()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">next_batch</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self.result_queue.get()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">close</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="keyword">for</span> p <span class="keyword">in</span> self.processors:</span><br><span class="line">            p.terminate()</span><br><span class="line">            p.join()</span><br><span class="line">            </span><br><span class="line">            </span><br><span class="line">            </span><br><span class="line"><span class="comment"># sampler是WarpSampler对象的实例，每次调用sampler.next_batch(),就返回一个batch的样本。</span></span><br><span class="line"><span class="comment"># 进一步解释：每次调用sampler.next_batch()就call其线程队列里的一个线程，每个线程用于返回一个batch的数据。</span></span><br><span class="line">sampler = WarpSampler(user_train, usernum, itemnum, batch_size=args.batch_size, maxlen=args.maxlen, n_workers=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="torch-tril"><a href="#torch-tril" class="headerlink" title="torch.tril()"></a>torch.tril()</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">torch.tril(<span class="built_in">input</span>, diagonal=<span class="number">0</span>, *, out=<span class="literal">None</span>) → Tensor</span><br><span class="line"><span class="comment"># 功能：返回下三角矩阵其余部分用out填充（默认为0）</span></span><br><span class="line"><span class="comment"># input：输入矩阵，二维tensor</span></span><br><span class="line"><span class="comment"># diagonal：表示对角线位置，diagonal=0为主对角线，diagonal=-1为主对角线往下1格，diagonal=1为主对角线往上1格</span></span><br><span class="line"><span class="comment"># out：表示填充，默认用out=None即0填充</span></span><br></pre></td></tr></table></figure>
+
+<p>例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = torch.randn(<span class="number">3</span>, <span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a</span><br><span class="line">tensor([[-<span class="number">1.0813</span>, -<span class="number">0.8619</span>,  <span class="number">0.7105</span>],</span><br><span class="line">        [ <span class="number">0.0935</span>,  <span class="number">0.1380</span>,  <span class="number">2.2112</span>],</span><br><span class="line">        [-<span class="number">0.3409</span>, -<span class="number">0.9828</span>,  <span class="number">0.0289</span>]])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>torch.tril(a)</span><br><span class="line">tensor([[-<span class="number">1.0813</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>],</span><br><span class="line">        [ <span class="number">0.0935</span>,  <span class="number">0.1380</span>,  <span class="number">0.0000</span>],</span><br><span class="line">        [-<span class="number">0.3409</span>, -<span class="number">0.9828</span>,  <span class="number">0.0289</span>]])</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>b = torch.randn(<span class="number">4</span>, <span class="number">6</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>b</span><br><span class="line">tensor([[ <span class="number">1.2219</span>,  <span class="number">0.5653</span>, -<span class="number">0.2521</span>, -<span class="number">0.2345</span>,  <span class="number">1.2544</span>,  <span class="number">0.3461</span>],</span><br><span class="line">        [ <span class="number">0.4785</span>, -<span class="number">0.4477</span>,  <span class="number">0.6049</span>,  <span class="number">0.6368</span>,  <span class="number">0.8775</span>,  <span class="number">0.7145</span>],</span><br><span class="line">        [ <span class="number">1.1502</span>,  <span class="number">3.2716</span>, -<span class="number">1.1243</span>, -<span class="number">0.5413</span>,  <span class="number">0.3615</span>,  <span class="number">0.6864</span>],</span><br><span class="line">        [-<span class="number">0.0614</span>, -<span class="number">0.7344</span>, -<span class="number">1.3164</span>, -<span class="number">0.7648</span>, -<span class="number">1.4024</span>,  <span class="number">0.0978</span>]])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>torch.tril(b, diagonal=<span class="number">1</span>)</span><br><span class="line">tensor([[ <span class="number">1.2219</span>,  <span class="number">0.5653</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>],</span><br><span class="line">        [ <span class="number">0.4785</span>, -<span class="number">0.4477</span>,  <span class="number">0.6049</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>],</span><br><span class="line">        [ <span class="number">1.1502</span>,  <span class="number">3.2716</span>, -<span class="number">1.1243</span>, -<span class="number">0.5413</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>],</span><br><span class="line">        [-<span class="number">0.0614</span>, -<span class="number">0.7344</span>, -<span class="number">1.3164</span>, -<span class="number">0.7648</span>, -<span class="number">1.4024</span>,  <span class="number">0.0000</span>]])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>torch.tril(b, diagonal=-<span class="number">1</span>)</span><br><span class="line">tensor([[ <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>],</span><br><span class="line">        [ <span class="number">0.4785</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>],</span><br><span class="line">        [ <span class="number">1.1502</span>,  <span class="number">3.2716</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>],</span><br><span class="line">        [-<span class="number">0.0614</span>, -<span class="number">0.7344</span>, -<span class="number">1.3164</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>,  <span class="number">0.0000</span>]])</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Python中的-波浪线运算符"><a href="#Python中的-波浪线运算符" class="headerlink" title="Python中的 ~ 波浪线运算符"></a>Python中的 ~ 波浪线运算符</h2><p>~，用法只有一个那就是按位取反</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/lanchunhui/article/details/51746477"> Python 波浪线与补码_https://space.bilibili.com/59807853-CSDN博客_python 波浪线</a></p>
+<h2 id="torch-nn-MultiAttention"><a href="#torch-nn-MultiAttention" class="headerlink" title="torch.nn.MultiAttention"></a>torch.nn.MultiAttention</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">torch.nn.MultiheadAttention(embed_dim, num_heads, dropout=<span class="number">0.0</span>, bias=<span class="literal">True</span>, add_bias_kv=<span class="literal">False</span>, add_zero_attn=<span class="literal">False</span>, kdim=<span class="literal">None</span>, vdim=<span class="literal">None</span>, batch_first=<span class="literal">False</span>, device=<span class="literal">None</span>, dtype=<span class="literal">None</span>):</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>对应公式：<br>$$<br>Multihead(Q,K,V) = Concat(head_1,…,head_h)W^O    \<br>where \quad head_i= Attention(QW^Q_i,KW^K_i,VW^V_i)<br>$$</p>
+<p>计算公式：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">forward(query, key, value, key_padding_mask=<span class="literal">None</span>, need_weights=<span class="literal">True</span>, attn_mask=<span class="literal">None</span>)</span><br></pre></td></tr></table></figure>
+
+<p>QKV比较常规，需要注意的是</p>
+<ol>
+<li>key_padding_mask参数，大小为（N，S），指定key中的哪些元素不做attention计算，即看作padding。注意，为True的位置不计算attention（是padding的地方不计算）</li>
+<li>attn_mask参数，</li>
+</ol>
+<h2 id="torch-nn-BCEWithLogitsLoss"><a href="#torch-nn-BCEWithLogitsLoss" class="headerlink" title="torch.nn.BCEWithLogitsLoss()"></a>torch.nn.BCEWithLogitsLoss()</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">forward(self, input: Tensor, target: Tensor) -&gt; Tensor</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：</p>
+<ul>
+<li>input: Tensor of arbitrary shape as unnormalized scores (often referred to as logits).</li>
+<li>target: Tensor of the same shape as input with values between 0 and 1</li>
+</ul>
+<p>input：$x$        output：$y$</p>
+<p>$$<br>ℓ(x,y)=L={l_1,…,l_N}^T<br>$$<br>$$<br>l_n=−w_n[y_n·log\sigma(x_n)+(1−y_n)·log(1−\sigma(x_n))]<br>$$</p>
+<p>当 $y=1$ 时，$l_n=−log\sigma(x_n)$  ；当 $y=0$ 时，$l_n=−log(1-\sigma(x_n))$     。</p>
+<p>论文里使用了一个全1的矩阵pos_labels，和一个全0的矩阵neg_labels。正例标签值都为1（正确的item，ground truth应该是概率为1），负例标签值都为0（错误的item，ground truth应该是概率为0）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">pos_labels, neg_labels = torch.ones(pos_logits.shape, device=args.device), \</span><br><span class="line">torch.zeros(neg_logits.shape, device=args.device)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># print(&quot;\neye ball check raw_logits:&quot;); print(pos_logits); print(neg_logits)</span></span><br><span class="line"><span class="comment"># check pos_logits &gt; 0, neg_logits &lt; 0</span></span><br><span class="line">adam_optimizer.zero_grad()</span><br><span class="line">indices = np.where(pos != <span class="number">0</span>)    <span class="comment"># 返回一个二维数组array， array[0]=[横坐标], array[1]=[纵坐标]</span></span><br><span class="line">loss = bce_criterion(pos_logits[indices], pos_labels[indices])  <span class="comment"># 使正例的得分尽量</span></span><br><span class="line">loss += bce_criterion(neg_logits[indices], neg_labels[indices])</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="torch-argsort"><a href="#torch-argsort" class="headerlink" title="torch.argsort()"></a>torch.argsort()</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">torch.argsort(<span class="built_in">input</span>, dim=-<span class="number">1</span>, descending=<span class="literal">False</span>) → LongTensor</span><br></pre></td></tr></table></figure>
+
+<p>沿着指定dim从小到大（默认）排序元素，然后返回这些元素原来的下标。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt;t = torch.randint(<span class="number">1</span>,<span class="number">10</span>,(<span class="number">1</span>,<span class="number">5</span>))</span><br><span class="line">&gt;&gt;&gt;t</span><br><span class="line">tensor([[<span class="number">7</span>, <span class="number">9</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">3</span>]])</span><br><span class="line">&gt;&gt;&gt;t.argsort()</span><br><span class="line">tensor([[<span class="number">4</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">1</span>]])</span><br><span class="line">&gt;&gt;&gt;t.argsort().argsort()</span><br><span class="line">tensor([[<span class="number">3</span>, <span class="number">4</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">0</span>]])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 两次argsort()可以返回每个元素的rank排名</span></span><br><span class="line"><span class="comment"># 解释：</span></span><br><span class="line"><span class="comment"># 把商品0,1,2,3,4按顺序摆好，他们的得分分别为[7,9,5,6,3]</span></span><br><span class="line"><span class="comment"># 对所有商品的得分从小到大排序（argsort()操作）</span></span><br><span class="line"><span class="comment"># 得到积分排名是[3,5,6,7,9]，积分排名对应的商品id是[4,2,3,0,1]（第一次argsort()的结果），每个商品id对应的下标就是他们的得分名次</span></span><br><span class="line"><span class="comment"># 例如商品4得分最高排在第一位，商品1得分最低排最后一位</span></span><br><span class="line"><span class="comment"># 然后我们想得到0,1,2,3,4顺序下的结果</span></span><br><span class="line"><span class="comment"># 所以对商品id排序，使得商品摆放顺序由[4,2,3,0,1]变为[0,1,2,3,4]，这里也是argsort()操作，因为0~4天然有顺序关系</span></span><br><span class="line"><span class="comment"># [4,2,3,0,1]变为[0,1,2,3,4]的同时，排名情况[0,1,2,3,4]也变成了[3,4,1,2,0]（第二次argsort()的结果）</span></span><br><span class="line"><span class="comment"># 即求得每个商品在原来顺序下的得分名次</span></span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/traditional/p/13702904.html">numpy中的argmax、argmin、argwhere、argsort、argpartition函数 - 古明地盆 - 博客园 (cnblogs.com)</a></p>
+<h2 id="评价指标Hit-Ratio、NDCG-1"><a href="#评价指标Hit-Ratio、NDCG-1" class="headerlink" title="评价指标Hit Ratio、NDCG[1]"></a>评价指标Hit Ratio、NDCG<a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/2806416.2806504">[1]</a></h2><h3 id="Hit-Ratio"><a href="#Hit-Ratio" class="headerlink" title="Hit Ratio"></a>Hit Ratio</h3><p>Evaluation Metrics. Given a user, each algorithm produces a ranked list of items. To assess the ranked list with the ground-truth item set (GT), we adopt Hit Ratio (HR), which has been commonly used in top-N evaluation . If a test item appears in the recommended list, it is deemed a hit. HR is calculated as:<br>$$<br>HR@K=\frac{Number\ of \  Hits@K}{|GT|}<br>$$</p>
+<h3 id="NDCG"><a href="#NDCG" class="headerlink" title="NDCG"></a>NDCG</h3><p>As the HR is recall-based metric, it does not reflect the accuracy of getting top ranks correct, which is crucial in many real-world applications. To address this, we also adopt Normalized Discounted Cumulative Gain (NDCG), which assigns higher importance to results at top ranks, scoring successively lower ranks with marginal fractional utility:<br>$$<br>NDCG@K=Z_K\sum^K_{i=1}\frac{2^{r_i}-1}{log_2{(i+1)}}<br>$$<br>where ZK is the normalizer to ensure the perfect ranking has a value of 1; ri is the graded relevance of item at position i. We use the simple binary relevance for our work: ri = 1 if the item is in the test set, and 0 otherwise. For both metrics, larger values indicate better performance. In the evaluation, we calculate both metrics for each user in the test set, and report the average score.</p>
+<h3 id="代码实现："><a href="#代码实现：" class="headerlink" title="代码实现："></a>代码实现：</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># evaluate on test set</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">evaluate</span>(<span class="params">model, dataset, args</span>):</span></span><br><span class="line">    [train, valid, test, usernum, itemnum] = copy.deepcopy(dataset)  <span class="comment"># deepcopy一份用于valid和test</span></span><br><span class="line"></span><br><span class="line">    NDCG = <span class="number">0.0</span></span><br><span class="line">    HT = <span class="number">0.0</span></span><br><span class="line">    valid_user = <span class="number">0.0</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> usernum &gt; <span class="number">10000</span>:  <span class="comment"># 用户数量大于10000就随机采10000</span></span><br><span class="line">        users = random.sample(<span class="built_in">range</span>(<span class="number">1</span>, usernum + <span class="number">1</span>), <span class="number">10000</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        users = <span class="built_in">range</span>(<span class="number">1</span>, usernum + <span class="number">1</span>)</span><br><span class="line">    <span class="keyword">for</span> u <span class="keyword">in</span> users:</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(train[u]) &lt; <span class="number">1</span> <span class="keyword">or</span> <span class="built_in">len</span>(test[u]) &lt; <span class="number">1</span>: <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        seq = np.zeros([args.maxlen], dtype=np.int32)</span><br><span class="line">        idx = args.maxlen - <span class="number">1</span></span><br><span class="line">        <span class="comment"># 假设原始序列为[1,2,3,4,5,6,7]    6用于valid；7用于test</span></span><br><span class="line">        seq[idx] = valid[u][<span class="number">0</span>]  <span class="comment"># seq: [0,0,0,...,0,0,0,6]</span></span><br><span class="line">        idx -= <span class="number">1</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">reversed</span>(train[u]):  <span class="comment"># seq: [0,0,0,...,0,1,2,3,4,5,6]  只剩test里的[7]用于预测</span></span><br><span class="line">            seq[idx] = i</span><br><span class="line">            idx -= <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> idx == -<span class="number">1</span>: <span class="keyword">break</span></span><br><span class="line">        rated = <span class="built_in">set</span>(train[u])  <span class="comment"># 序列物品集合</span></span><br><span class="line">        rated.add(<span class="number">0</span>)</span><br><span class="line">        item_idx = [test[u][<span class="number">0</span>]]  <span class="comment"># 取出ground truth label</span></span><br><span class="line">        <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">100</span>):  <span class="comment"># item_idx: [label,random,random,...,random] 1+100个随机物品，看得分在top10的情况</span></span><br><span class="line">            t = np.random.randint(<span class="number">1</span>, itemnum + <span class="number">1</span>)</span><br><span class="line">            <span class="keyword">while</span> t <span class="keyword">in</span> rated: t = np.random.randint(<span class="number">1</span>, itemnum + <span class="number">1</span>)</span><br><span class="line">            item_idx.append(t)</span><br><span class="line"></span><br><span class="line">        predictions = -model.predict(*[np.array(l) <span class="keyword">for</span> l <span class="keyword">in</span> [[u], [seq], item_idx]])</span><br><span class="line">        predictions = predictions[<span class="number">0</span>]  <span class="comment"># (1,101) -&gt; 101 (squeeze)</span></span><br><span class="line"></span><br><span class="line">        rank = predictions.argsort().argsort()[<span class="number">0</span>].item()  <span class="comment"># 做两次argsort()，可以得到每个位置的rank排名</span></span><br><span class="line"></span><br><span class="line">        valid_user += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> rank &lt; <span class="number">10</span>:  <span class="comment"># TOP10才记录，这里真实rank = rank + 1 ，因为argsort()索引包含0</span></span><br><span class="line">            NDCG += <span class="number">1</span> / np.log2(rank + <span class="number">2</span>)</span><br><span class="line">            HT += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> valid_user % <span class="number">100</span> == <span class="number">0</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">&#x27;.&#x27;</span>, end=<span class="string">&quot;&quot;</span>)</span><br><span class="line">            <span class="comment"># sys.stdout.flush()</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> NDCG / valid_user, HT / valid_user</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="参考文献："><a href="#参考文献：" class="headerlink" title="参考文献："></a>参考文献：</h2><p><a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/2806416.2806504">[1]He X, Chen T, Kan M Y, et al. Trirank: Review-aware explainable recommendation by modeling aspects</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pytorch/" rel="tag"># pytorch</a>
+              <a href="/tags/SASRec/" rel="tag"># SASRec</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/11/03/SASRec/" rel="prev" title="论文笔记：《Self-Attentive Sequential Recommendation》">
+      <i class="fa fa-chevron-left"></i> 论文笔记：《Self-Attentive Sequential Recommendation》
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/11/14/Pytorch%20Geometric/" rel="next" title="Pytorch Geometric 学习笔记">
+      Pytorch Geometric 学习笔记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#collections-defaultdict-list"><span class="nav-number">1.</span> <span class="nav-text">collections.defaultdict(list)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Python%E8%87%AA%E5%AE%9A%E4%B9%89%E5%A4%9A%E7%BA%BF%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">Python自定义多线程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#torch-tril"><span class="nav-number">3.</span> <span class="nav-text">torch.tril()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Python%E4%B8%AD%E7%9A%84-%E6%B3%A2%E6%B5%AA%E7%BA%BF%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="nav-number">4.</span> <span class="nav-text">Python中的 ~ 波浪线运算符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#torch-nn-MultiAttention"><span class="nav-number">5.</span> <span class="nav-text">torch.nn.MultiAttention</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#torch-nn-BCEWithLogitsLoss"><span class="nav-number">6.</span> <span class="nav-text">torch.nn.BCEWithLogitsLoss()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#torch-argsort"><span class="nav-number">7.</span> <span class="nav-text">torch.argsort()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%84%E4%BB%B7%E6%8C%87%E6%A0%87Hit-Ratio%E3%80%81NDCG-1"><span class="nav-number">8.</span> <span class="nav-text">评价指标Hit Ratio、NDCG[1]</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Hit-Ratio"><span class="nav-number">8.1.</span> <span class="nav-text">Hit Ratio</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NDCG"><span class="nav-number">8.2.</span> <span class="nav-text">NDCG</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0%EF%BC%9A"><span class="nav-number">8.3.</span> <span class="nav-text">代码实现：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE%EF%BC%9A"><span class="nav-number">9.</span> <span class="nav-text">参考文献：</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

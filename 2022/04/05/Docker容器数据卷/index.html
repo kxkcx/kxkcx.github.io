@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="什么是数据卷数据不应该放在容器中，如果容器删除，数据就会丢失！&#x3D;&#x3D;需求：数据 持久化&#x3D;&#x3D; MYSQL，容器删了&#x3D;删库跑路！&#x3D;&#x3D;需求：MYSQL数据可以存储在本地&#x3D;&#x3D; &#x3D;&#x3D;&gt; 需要容器之间有一个数据共享的技术！Docker容器中产生的数据，同步到本地！ 这就是卷技术！说白了就是目录的挂载，将容器内的目录，挂载到 Linux 上   总结：容器的持久化和同步操作！ 容器间也可以数据共享！ 使">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker容器数据卷">
+<meta property="og:url" content="http://guadzilla.github.io/2022/04/05/Docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="什么是数据卷数据不应该放在容器中，如果容器删除，数据就会丢失！&#x3D;&#x3D;需求：数据 持久化&#x3D;&#x3D; MYSQL，容器删了&#x3D;删库跑路！&#x3D;&#x3D;需求：MYSQL数据可以存储在本地&#x3D;&#x3D; &#x3D;&#x3D;&gt; 需要容器之间有一个数据共享的技术！Docker容器中产生的数据，同步到本地！ 这就是卷技术！说白了就是目录的挂载，将容器内的目录，挂载到 Linux 上   总结：容器的持久化和同步操作！ 容器间也可以数据共享！ 使">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405151429046.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405151429046.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405153329429.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405183512106.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405183540730.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405160002622.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405183614297.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405183721449.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405164118444.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405170430808.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405170800369.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405171126981.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405172422841.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405172959557.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405173218738.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405173548023.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405173743825.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405174426597.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405175122829.png">
+<meta property="article:published_time" content="2022-04-05T10:41:34.291Z">
+<meta property="article:modified_time" content="2022-04-05T10:50:30.511Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405151429046.png">
+
+<link rel="canonical" href="http://guadzilla.github.io/2022/04/05/Docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Docker容器数据卷 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/04/05/Docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Docker容器数据卷
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-04-05 18:41:34 / 修改时间：18:50:30" itemprop="dateCreated datePublished" datetime="2022-04-05T18:41:34+08:00">2022-04-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>16 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405151429046.png" alt="image-20220405151429046" style="zoom:50%;" />
+
+<h2 id="什么是数据卷"><a href="#什么是数据卷" class="headerlink" title="什么是数据卷"></a>什么是数据卷</h2><p>数据不应该放在容器中，如果容器删除，数据就会丢失！==需求：数据 持久化==</p>
+<p>MYSQL，容器删了=删库跑路！==需求：MYSQL数据可以存储在本地==</p>
+<p>==&gt; 需要容器之间有一个数据共享的技术！Docker容器中产生的数据，同步到本地！</p>
+<p>这就是卷技术！说白了就是目录的挂载，将容器内的目录，挂载到 Linux 上</p>
+<img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405151429046.png" alt="image-20220405151429046" style="zoom:50%;" />
+
+<p><strong>总结：容器的持久化和同步操作！ 容器间也可以数据共享！</strong></p>
+<h2 id="使用数据卷"><a href="#使用数据卷" class="headerlink" title="使用数据卷"></a>使用数据卷</h2><blockquote>
+<p>方式一：直接使用命令来挂载 -V</p>
+</blockquote>
+<span id="more"></span>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">docker run -it -v 主机目录：容器内目录 -p 主机端口：容器内端口 </span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 测试</span></span><br><span class="line">xxx@data:~$ sudo docker run -it -v /home/dutir/xxx/ceshi:/home centos /bin/bash</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看容器id</span></span><br><span class="line">xxx@data:~$ sudo docker ps</span><br><span class="line">CONTAINER ID        IMAGE                      COMMAND                  CREATED             STATUS                  PORTS                                                  NAMES</span><br><span class="line">43b6593461e7        centos                     &quot;/bin/bash&quot;              2 minutes ago       Up 2 minutes                                                                   quizzical_varahamihira</span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看容器详细信息</span></span><br><span class="line">xxx@data:~$ sudo docker inspect 43b6593461e7</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 看到挂载</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405153329429.png" alt="image-20220405153329429" style="zoom:67%;" />、</p>
+<p><strong>测试文件的同步</strong></p>
+<img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405183512106.png" alt="image-20220405183512106" style="zoom:80%;" />
+
+
+
+<p><strong>再来测试</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 1.停止容器</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 2.宿主机上修改文件</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 3.启动容器</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 4.容器内的数据依旧是同步的</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405183540730.png" alt="image-20220405183540730"></p>
+<p>好处：我们以后修改只需要在本地修改即可，容器内会自动同步！</p>
+<h2 id="实战：安装MySQL"><a href="#实战：安装MySQL" class="headerlink" title="实战：安装MySQL"></a>实战：安装MySQL</h2><p>思考：MySQL 的数据持久化问题，</p>
+<img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405160002622.png" alt="image-20220405160002622" style="zoom: 67%;" />
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 获取镜像</span></span><br><span class="line">docker pull mysql:5.7</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 运行容器，需要做数据挂载！  <span class="comment"># 安装启动mysql。需要配置密码，这是要注意的，去docker hub官方文档看（上图）</span></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 官方测试 $ docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> -e 配置环境，这里要配置密码</span> </span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动我们的</span></span><br><span class="line">-d 后台运行</span><br><span class="line">-p 端口映射</span><br><span class="line">-v 数据卷挂载，可挂载多个</span><br><span class="line">-e 环境配置</span><br><span class="line">--name 容器名字</span><br><span class="line"></span><br><span class="line">xxx@data:~$ sudo docker run -d -p 3310:3306 -v /home/dutir/xxx/mysql_test/conf:/etc/mysql/conf.d -v /home/dutir/xxx/mysql_test/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 --name mysql01 mysql:5.7</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动成功之后，我们在本地使用 sqlyog 连接测试</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> sqlyog 连接到本地的3310，本地3310侦听服务器宿主机的3310，宿主机的3310和容器内的3306映射，这个时候就可以连接上了</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 在本地sqlyog测试创建一个数据库，查看一下我们映射的路径是否ok！</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> test_for_docker以后，docker里多出这个数据库</span></span><br></pre></td></tr></table></figure>
+
+<img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405183614297.png" alt="image-20220405183614297" style="zoom:67%;" />
+
+<p>即使把容器删除</p>
+<img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405183721449.png" alt="image-20220405183721449" style="zoom:67%;" />
+
+<p>发现，我们挂载到本地的数据卷依旧没有丢失，这就实现了容器持久化功能！</p>
+<h2 id="具名和匿名挂载"><a href="#具名和匿名挂载" class="headerlink" title="具名和匿名挂载"></a>具名和匿名挂载</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 匿名挂载（不指定主机名）</span></span><br><span class="line">-v 容器内路径</span><br><span class="line">docker run -d -P --name nginx01 -v /etc/nginx nginx</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看所有本地volume（数据卷）	乱码的都是匿名卷</span></span><br><span class="line">xxx@data:~$ sudo docker volume ls</span><br><span class="line">DRIVER              VOLUME NAME</span><br><span class="line">local               51ed233d17e5c740a92f70e075335dd59cbcf913dd03390d64880893a6a6b043</span><br><span class="line">local               mysql_lawbda_my-db</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 这里发现，这种就是匿名挂在，我们在 -v 时只写了容器内的路径，没有写容器外的路径！</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 具名挂载</span></span><br><span class="line">docker run -d -P --name nginx01 -v juming-nginx:/etc/nginx nginx</span><br><span class="line"></span><br><span class="line">xxx@data:~$ sudo docker volume ls</span><br><span class="line">DRIVER              VOLUME NAME</span><br><span class="line">local               51ed233d17e5c740a92f70e075335dd59cbcf913dd03390d64880893a6a6b043</span><br><span class="line">local				juming-nginx</span><br><span class="line">local               mysql_lawbda_my-db</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 通过 -v 卷名：容器内路径</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看一下这个卷（这里查看mysql_lawbda_my-db）</span></span><br><span class="line">xxx@data:~$ sudo docker volume inspect mysql_lawbda_my-db</span><br><span class="line">[</span><br><span class="line">    &#123;</span><br><span class="line">        &quot;CreatedAt&quot;: &quot;2022-04-04T17:14:49+08:00&quot;,</span><br><span class="line">        &quot;Driver&quot;: &quot;local&quot;,</span><br><span class="line">        &quot;Labels&quot;: &#123;</span><br><span class="line">            &quot;com.docker.compose.project&quot;: &quot;mysql_lawbda&quot;,</span><br><span class="line">            &quot;com.docker.compose.version&quot;: &quot;1.27.4&quot;,</span><br><span class="line">            &quot;com.docker.compose.volume&quot;: &quot;my-db&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;Mountpoint&quot;: &quot;/var/lib/docker/volumes/mysql_lawbda_my-db/_data&quot;,</span><br><span class="line">        &quot;Name&quot;: &quot;mysql_lawbda_my-db&quot;,</span><br><span class="line">        &quot;Options&quot;: null,</span><br><span class="line">        &quot;Scope&quot;: &quot;local&quot;</span><br></pre></td></tr></table></figure>
+
+<p>所有达到docker容器内的卷，没有指定目录的情况下都是在<code>/val/lib/docker/volumes/xxxx/_data</code></p>
+<img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405164118444.png" alt="image-20220405164118444" style="zoom: 67%;" />
+
+<p>我们通过具名挂载 可以方便找到我们的一个卷，大多数情况在使用<code>具名挂载</code> </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 如何确定是具名挂载还是匿名挂在，还是指定路径挂载！</span></span><br><span class="line"></span><br><span class="line">-v 容器内路径				 # 匿名挂载</span><br><span class="line">-v 卷名:容器内路径    			# 具名挂载</span><br><span class="line">-v /宿主机路径:容器内路径	   	  # 指定路径挂载 </span><br></pre></td></tr></table></figure>
+
+<p>拓展：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 通过 -v 容器内路径:ro  rw  改变读写权限</span></span><br><span class="line">ro	read only	# 只读</span><br><span class="line">rw  readwrite	# 可读可写</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 一旦设置了容器权限，容器对我们挂载出来的内容就有限定了！</span></span><br><span class="line">docker run -d -P --name nginx01 -v juming-nginx:/etc/nginx:ro nginx</span><br><span class="line">docker run -d -P --name nginx01 -v juming-nginx:/etc/nginx:rw nginx</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> ro  只要看到ro，就说明这个路径只能通过宿主机来改变，容器内部是无法操作的</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="初识Dockerfile"><a href="#初识Dockerfile" class="headerlink" title="初识Dockerfile"></a>初识Dockerfile</h2><blockquote>
+<p>方式二：生成镜像的时候就挂载出来</p>
+</blockquote>
+<p>Dockerfile 就是用来构建 docker 镜像的构建文件！ 就是一段命令脚本！先体验一下！</p>
+<p>通过这个脚本可以生成镜像，镜像是一层一层的，脚本就是一个一个的命令，每个命令就是一层。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 创建一个dockerfile文件，名字可以随机， 建议 Dockerfile</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 文件中的内容  指令（都是大写） 参数</span></span><br><span class="line"></span><br><span class="line">FROM centos</span><br><span class="line"></span><br><span class="line">VOLUME [&quot;volume01&quot;,&quot;volume02&quot;]	</span><br><span class="line"></span><br><span class="line">CMD echo &quot;----end----&quot;</span><br><span class="line"></span><br><span class="line">CMD /bin/bash</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 这里的每个命令，就是镜像的一层！</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> docker build 构建镜像</span></span><br><span class="line">root@data:/home/dutir/xxx/docker-test-volume# docker build -f /home/dutir/xxx/docker-test-volume/dockerfile1 -t wjm/centos:1.0 .</span><br><span class="line">Sending build context to Docker daemon  2.048kB</span><br><span class="line">Step 1/4 : FROM centos</span><br><span class="line"><span class="meta"> ---&gt;</span><span class="bash"> 5d0da3dc9764</span></span><br><span class="line">Step 2/4 : VOLUME [&quot;volume01&quot;,&quot;volume02&quot;]</span><br><span class="line"><span class="meta"> ---&gt;</span><span class="bash"> Running <span class="keyword">in</span> eedc2cf7a5b3</span></span><br><span class="line">Removing intermediate container eedc2cf7a5b3</span><br><span class="line"><span class="meta"> ---&gt;</span><span class="bash"> 80396b388983</span></span><br><span class="line">Step 3/4 : CMD echo &quot;----end----&quot;</span><br><span class="line"><span class="meta"> ---&gt;</span><span class="bash"> Running <span class="keyword">in</span> 734dc31604b0</span></span><br><span class="line">Removing intermediate container 734dc31604b0</span><br><span class="line"><span class="meta"> ---&gt;</span><span class="bash"> 5ef9da00ac40</span></span><br><span class="line">Step 4/4 : CMD /bin/bash</span><br><span class="line"><span class="meta"> ---&gt;</span><span class="bash"> Running <span class="keyword">in</span> 593084c92533</span></span><br><span class="line">Removing intermediate container 593084c92533</span><br><span class="line"><span class="meta"> ---&gt;</span><span class="bash"> 8edda645979e</span></span><br><span class="line">Successfully built 8edda645979e</span><br><span class="line">Successfully tagged wjm/centos:1.0</span><br><span class="line">root@data:/home/dutir/xxx/docker-test-volume# </span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动一下自己生成的镜像</span></span><br><span class="line">root@data:/home/dutir/xxx/docker-test-volume# docker images</span><br><span class="line">REPOSITORY                  TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">wjm/centos                  1.0                 8edda645979e        4 minutes ago       231MB</span><br><span class="line">root@data:/home/dutir/xxx/docker-test-volume# docker run -it 8edda645979e /bin/bash</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405170430808.png" alt="image-20220405170430808"></p>
+<p>这个目录就是我们生成镜像时自动挂载的，数据卷目录。</p>
+<p>这个和外部一定有一个同步的目录！dockerfile里只指定了容器内目录，一定是匿名挂载，所以容器外、宿主机上肯定有乱码的挂载。</p>
+<img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405170800369.png" alt="image-20220405170800369" style="zoom: 67%;" />
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> docker inspect 查看容器信息</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 找到 Mounts，查看卷挂载的路径，符合匿名挂载的默认路径/var/lib/docker/volumes/xxx/</span></span><br></pre></td></tr></table></figure>
+
+<img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405171126981.png" alt="image-20220405171126981" style="zoom:67%;" />
+
+<p>在容器里的 volume01 下新建一个 container.txt 文件。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@4b4b467cf777 /]# ls</span><br><span class="line">bin  etc   lib	  lost+found  mnt  proc  run   srv  tmp  var	   volume02</span><br><span class="line">dev  home  lib64  media       opt  root  sbin  sys  usr  volume01</span><br><span class="line">[root@4b4b467cf777 /]# cd volume01</span><br><span class="line">[root@4b4b467cf777 volume01]# ls</span><br><span class="line">[root@4b4b467cf777 volume01]# touch container.txt</span><br><span class="line">[root@4b4b467cf777 volume01]# ls</span><br><span class="line">container.txt</span><br><span class="line">[root@4b4b467cf777 volume01]# </span><br></pre></td></tr></table></figure>
+
+<p>测试一下刚才的文件是否同步出去。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 复制 Mounts 下的路径 /var/lib/docker/volumes/951ce898d681397c29606b61bb9da1102d7594f4d0cd069c4b63fbd96b171f96/_data</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">cd</span> 到这里</span></span><br><span class="line"></span><br><span class="line">root@data:~# cd /var/lib/docker/volumes/951ce898d681397c29606b61bb9da1102d7594f4d0cd069c4b63fbd96b171f96/_data</span><br><span class="line">root@data:/var/lib/docker/volumes/951ce898d681397c29606b61bb9da1102d7594f4d0cd069c4b63fbd96b171f96/_data# ls</span><br><span class="line">container.txt		# 发现新建的 container.txt 文件</span><br><span class="line">root@data:/var/lib/docker/volumes/951ce898d681397c29606b61bb9da1102d7594f4d0cd069c4b63fbd96b171f96/_data#</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这种方式我们未来使用的十分多，因为我们通常会构建自己的镜像！</p>
+<p>假设构建镜像时没有挂载卷，要手动镜像挂载 -v 卷名:容器内路径 </p>
+<h2 id="数据卷容器"><a href="#数据卷容器" class="headerlink" title="数据卷容器"></a>数据卷容器</h2><blockquote>
+<p>即容器和容器间同步</p>
+</blockquote>
+<p>多个 Mysql 数据如何同步？</p>
+<p>==所有 docker 之间共享的卷都是独立的，每个docker有自己的数据卷。新建时拷贝父容器的备份。所以只要有一份存在，数据都不会丢失。==</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405172422841.png" alt="image-20220405172422841"></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动3个容器，通过我们刚才自己写的镜像启动</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 首先启动 docker01</span> </span><br></pre></td></tr></table></figure>
+
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405172959557.png" alt="image-20220405172959557"></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动 docker02，volume 从 docker01 继承</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> docker01 就叫做数据卷容器</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405173218738.png" alt="image-20220405173218738"></p>
+<p>在 docker01 修改数据， docker02 会同步吗？测试一下。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405173548023.png" alt="image-20220405173548023"></p>
+<p>回到 docker02 查看</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405173743825.png" alt="image-20220405173743825"></p>
+<p>docker01 创建的内容同步到 docker02 了</p>
+<p>再从 docker01 继承，启动 docker03，新建 docker03.txt</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405174426597.png" alt="image-20220405174426597"></p>
+<p>在 docker03 里创建的文件，在 docker01 和 docker02 里都同步了。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405175122829.png" alt="image-20220405175122829"></p>
+<p>只要是通过 –volume-from ，我们就可以实现容器间的数据共享。</p>
+<p>把 docker01 整个 rm 掉，docker02 和 docker03 的文件都还在。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 测试：可以删除docker01，查看一下docker02和docker03是否还可以访问这个文件</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 依旧可以访问</span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 测试：查看宿主机的volume，还是存在</span></span><br><span class="line">root@data:~# cd /var/lib/docker/volumes/2bdf8b38df84ffea344d0f758e7be2c2045c54f270a9da362b12246a1d78d636/_data</span><br><span class="line">root@data:/var/lib/docker/volumes/2bdf8b38df84ffea344d0f758e7be2c2045c54f270a9da362b12246a1d78d636/_data# ls</span><br><span class="line">docker01.txt  docker03.txt</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>==所有 docker 之间共享的卷都是独立的，每个docker有自己的数据卷。新建时 <strong>拷贝</strong> 父容器的备份。所以只要有一份存在，数据都不会丢失。==</p>
+<p>回到问题：多个 Mysql 数据如何同步？</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> -v 容器内路径，匿名挂载</span></span><br><span class="line"></span><br><span class="line">xxx@data:~$ sudo docker run -d -p 3310:3306 -v /etc/mysql/conf.d -v /var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 --name mysql01 mysql:5.7</span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 用 --volumes-from 可以实现两个容器同步</span></span><br><span class="line">xxx@data:~$ sudo docker run -d -p 3310:3306  -e MYSQL_ROOT_PASSWORD=123456 --name mysql01 --volumes-from mysql01 mysql:5.7</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>容器之间配置信息的传递，数据卷容器的生命周期一直持续到没有容器使用为止（所有容器都停止）。</p>
+<p>但是一旦你持久化到了本地，这个时候，本地的数据是不会删除的。所以重要的文件存在宿主机上就好啦。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>以上是看 b 站教学视频记的笔记。</p>
+<p>教程地址：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1og4y1q7M4?p=9">【狂神说Java】Docker最新超详细版教程通俗易懂_哔哩哔哩_bilibili</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/05/Docker%E9%95%9C%E5%83%8F%E5%8E%9F%E7%90%86/" rel="prev" title="Docker镜像原理">
+      <i class="fa fa-chevron-left"></i> Docker镜像原理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/22/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%803/" rel="next" title="推荐系统基础3">
+      推荐系统基础3 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E6%95%B0%E6%8D%AE%E5%8D%B7"><span class="nav-number">1.</span> <span class="nav-text">什么是数据卷</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%95%B0%E6%8D%AE%E5%8D%B7"><span class="nav-number">2.</span> <span class="nav-text">使用数据卷</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E6%88%98%EF%BC%9A%E5%AE%89%E8%A3%85MySQL"><span class="nav-number">3.</span> <span class="nav-text">实战：安装MySQL</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B7%E5%90%8D%E5%92%8C%E5%8C%BF%E5%90%8D%E6%8C%82%E8%BD%BD"><span class="nav-number">4.</span> <span class="nav-text">具名和匿名挂载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E8%AF%86Dockerfile"><span class="nav-number">5.</span> <span class="nav-text">初识Dockerfile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%8D%B7%E5%AE%B9%E5%99%A8"><span class="nav-number">6.</span> <span class="nav-text">数据卷容器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">7.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">8.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

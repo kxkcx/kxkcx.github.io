@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="任务1：推荐系统基础 阅读推荐系统在工业落地的链接： 推荐系统整体架构及算法流程详解 美团旅游推荐系统的演进 阿里智能推荐AIRec   思考 &amp; 回答以下问题，并将回答记录到博客 推荐系统与常见的结构化问题的区别是什么？ 如何评价推荐系统「推荐」的准不准？ 推荐系统一般分为召回 &amp; 排序，为什么这样划分？    代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzill">
+<meta property="og:type" content="article">
+<meta property="og:title" content="推荐系统基础1">
+<meta property="og:url" content="http://guadzilla.github.io/2022/04/22/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%801/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="任务1：推荐系统基础 阅读推荐系统在工业落地的链接： 推荐系统整体架构及算法流程详解 美团旅游推荐系统的演进 阿里智能推荐AIRec   思考 &amp; 回答以下问题，并将回答记录到博客 推荐系统与常见的结构化问题的区别是什么？ 如何评价推荐系统「推荐」的准不准？ 推荐系统一般分为召回 &amp; 排序，为什么这样划分？    代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzill">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/v2-a253b01cf7f141b9ad11eefdf3cf58d3_1440w.jpg">
+<meta property="og:image" content="https://camo.githubusercontent.com/07a924ef2229334f903f1ba3e5cd17115a16159dcb1756cda93232b3cf998c0d/687474703a2f2f72796c756f2e6f73732d636e2d6368656e6764752e616c6979756e63732e636f6d2f4a6176616175632e706e67">
+<meta property="og:image" content="https://camo.githubusercontent.com/5194f61aac70bfec14ede3fa6b27aed0670f2cd59b5e9ad688f1f526a4c5f658/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303731373230313431313336372e706e67237069635f63656e746572">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_jpg/icTMNdGHpfJYqcAFSwiaWKjeqTweM9aJrNKqZVvMn2GZvoDTnPHjYMVywvGicII8P9d4nMjib5Jia8kGlDbicibTGSPlQ/640?wx_fmt=jpeg&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="article:published_time" content="2022-04-22T02:03:02.000Z">
+<meta property="article:modified_time" content="2022-04-29T04:22:13.000Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="推荐系统基础">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/v2-a253b01cf7f141b9ad11eefdf3cf58d3_1440w.jpg">
+
+<link rel="canonical" href="http://guadzilla.github.io/2022/04/22/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%801/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>推荐系统基础1 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/04/22/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%801/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          推荐系统基础1
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-04-22 10:03:02" itemprop="dateCreated datePublished" datetime="2022-04-22T10:03:02+08:00">2022-04-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-04-29 12:22:13" itemprop="dateModified" datetime="2022-04-29T12:22:13+08:00">2022-04-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">推荐系统</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h1 id="任务1：推荐系统基础"><a href="#任务1：推荐系统基础" class="headerlink" title="任务1：推荐系统基础"></a>任务1：推荐系统基础</h1><ul>
+<li>阅读推荐系统在工业落地的链接：<ul>
+<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/WXcfdzz7vts9UYBVxWs3AA">推荐系统整体架构及算法流程详解</a></li>
+<li><a target="_blank" rel="noopener" href="https://tech.meituan.com/2017/03/24/travel-recsys.html">美团旅游推荐系统的演进</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.alibabacloud.com/zh/product/airec">阿里智能推荐AIRec</a></li>
+</ul>
+</li>
+<li>思考 &amp; 回答以下问题，并将回答记录到博客<ul>
+<li>推荐系统与常见的结构化问题的区别是什么？</li>
+<li>如何评价推荐系统「推荐」的准不准？</li>
+<li>推荐系统一般分为召回 &amp; 排序，为什么这样划分？</li>
+</ul>
+</li>
+</ul>
+<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<span id="more"></span>
+<h2 id="推荐系统与常见的结构化问题的区别是什么？"><a href="#推荐系统与常见的结构化问题的区别是什么？" class="headerlink" title="推荐系统与常见的结构化问题的区别是什么？"></a>推荐系统与常见的结构化问题的区别是什么？</h2><p>结构化数据即表格数据（tabular data），绝大多数数据都是表格数据。</p>
+<p>推荐系统有user信息，item信息，这些数据虽然都是结构化的，但是推荐系统涉及到user和item的交互，所以不仅仅是一条结构化数据预测一个分类or一个数值那么简单，还需要从交互中抽象出用户兴趣，例如将用户交互建模为序列，这就不是结构化问题了。</p>
+<h2 id="如何评价推荐系统「推荐」的准不准？"><a href="#如何评价推荐系统「推荐」的准不准？" class="headerlink" title="如何评价推荐系统「推荐」的准不准？"></a>如何评价推荐系统「推荐」的准不准？</h2><p>常用的评价指标有：召回率Recall，准确率Precision，覆盖率Coverage，新颖度Popularity。</p>
+<p>召回率Recall：正确推荐的商品占所有应该推荐的商品的比例，即应该推荐的推荐了多少。公式描述：对用户u推荐N个物品（$R(u)$），令用户在测试集上喜欢的物品集合为$T(u)$，则</p>
+<script type="math/tex; mode=display">
+Recall=\frac{\sum_u|R(u) \cap T(u)|}{\sum_u |T(u)|}</script><p>准确率Precision：正确推荐的商品占推荐的商品列表的比例，即有多少推荐对了。公式描述：</p>
+<script type="math/tex; mode=display">
+Precision=\frac{\sum_u|R(u) \cap T(u)|}{\sum_u |R(u)|}</script><p>覆盖率Coverage：推荐的商品占所有商品的比例，即推荐的商品覆盖了多少所有商品。反映发掘长尾的能力。</p>
+<script type="math/tex; mode=display">
+Coverage = \frac{\bigcup_u R(u)}{|I|} \ \  , \ \bigcup:并集</script><p>新颖度Popularity：刻画推荐物品的平均流行度，平均流行度（Popularity）越高，新颖度越低。$Popularity(x)$定义为$x$在所有用户序列中出现的次数，出现次数越多，流行度越高。</p>
+<script type="math/tex; mode=display">
+Popularity= \sum _u \sum _ { i \in R(u) } \log (Popularity(i)+1)</script><p>AUC曲线：AUC（Area Under Curve），ROC曲线下与坐标轴围成的面积。在讲AUC前需要理解混淆矩阵，召回率，精确率，ROC曲线等概念。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/v2-a253b01cf7f141b9ad11eefdf3cf58d3_1440w.jpg" alt="img"></p>
+<p>根据混淆矩阵的定义，以另一种形式定义召回率和精确率：</p>
+<script type="math/tex; mode=display">
+Recall = \frac{TP}{TP+FN} \\
+Precision = \frac{TP}{TP+FP}</script><p>ROC曲线的横坐标为假阳性率（False Positive Rate, FPR），$FPR=\frac{FP}{FP+TN}$，N是真实负样本的个数， FP是N个负样本中被分类器预测为正样本的个数。<strong>FPRate的意义是所有真实类别为0的样本中，预测类别为1的比例。</strong></p>
+<p>纵坐标为真阳性率（True Positive Rate, TPR），$TPR=\frac{TP}{TP+FN}$，P是真实正样本的个数，TP是P个正样本中被分类器预测为正样本的个数。<strong>TPRate的意义是所有真实类别为1的样本中，预测类别为1的比例。</strong></p>
+<p><img src="https://camo.githubusercontent.com/07a924ef2229334f903f1ba3e5cd17115a16159dcb1756cda93232b3cf998c0d/687474703a2f2f72796c756f2e6f73732d636e2d6368656e6764752e616c6979756e63732e636f6d2f4a6176616175632e706e67" alt="img"></p>
+<p>AUC的计算方法同时考虑了分类器对于正例和负例的分类能力，在样本不平衡的情况下，依然能够对分类器作出合理的评价。对ROC更细致的解释：<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/39840928/answer/241440370">如何理解机器学习和统计中的AUC？ - 知乎 (zhihu.com)</a></p>
+<p>下面是部分评价指标的代码实现。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 评价指标:召回率、准确率</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">Metric</span>(<span class="params">train, test, N, all_recommend_list</span>):</span>  <span class="comment"># N:推荐N个物品</span></span><br><span class="line">    hit = <span class="number">0</span></span><br><span class="line">    recall_all = <span class="number">0</span>      <span class="comment"># recall 的分母</span></span><br><span class="line">    precision_all = <span class="number">0</span>   <span class="comment"># precision 的分母</span></span><br><span class="line">    <span class="keyword">for</span> user <span class="keyword">in</span> train.keys():</span><br><span class="line">        tu = test[user]</span><br><span class="line">        rank = all_recommend_list[user][<span class="number">0</span>:N]</span><br><span class="line">        <span class="keyword">for</span> item, pui <span class="keyword">in</span> rank:</span><br><span class="line">            <span class="keyword">if</span> item <span class="keyword">in</span> tu:</span><br><span class="line">                hit += <span class="number">1</span></span><br><span class="line">        recall_all += <span class="built_in">len</span>(tu)</span><br><span class="line">        precision_all += N</span><br><span class="line">    recall = hit / (recall_all * <span class="number">1.0</span>)</span><br><span class="line">    precision = hit / (precision_all * <span class="number">1.0</span>)</span><br><span class="line">    <span class="keyword">return</span> recall, precision</span><br><span class="line"></span><br><span class="line"><span class="comment"># 评价指标：覆盖率</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">Coverage</span>(<span class="params">train, test, N, all_recommend_list</span>):</span>  <span class="comment"># N:推荐N个物品</span></span><br><span class="line">    recommend_items = <span class="built_in">set</span>()</span><br><span class="line">    all_items = <span class="built_in">set</span>()</span><br><span class="line">    <span class="keyword">for</span> user <span class="keyword">in</span> train.keys():</span><br><span class="line">        <span class="keyword">for</span> item <span class="keyword">in</span> train[user]:</span><br><span class="line">            all_items.add(item)</span><br><span class="line">        <span class="keyword">for</span> item, pui <span class="keyword">in</span> rank:</span><br><span class="line">            recommend_items.add(item)</span><br><span class="line">    coverage = <span class="built_in">len</span>(recommend_items) / (<span class="built_in">len</span>(all_items) * <span class="number">1.0</span>)</span><br><span class="line">    <span class="keyword">return</span> coverage</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 评价指标：新颖度</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">Popularity</span>(<span class="params">train, test, N, recommend_res</span>):</span>	<span class="comment"># N:推荐N个物品</span></span><br><span class="line">    item_popularity = <span class="built_in">dict</span>()</span><br><span class="line">    <span class="keyword">for</span> user, items <span class="keyword">in</span> train.items():</span><br><span class="line">        <span class="keyword">for</span> item <span class="keyword">in</span> items:</span><br><span class="line">            <span class="keyword">if</span> item <span class="keyword">not</span> <span class="keyword">in</span> item_popularity:</span><br><span class="line">                item_popularity[item] = <span class="number">0</span></span><br><span class="line">            item_popularity[item] += <span class="number">1</span></span><br><span class="line">    popularity = <span class="number">0</span></span><br><span class="line">    n = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> user <span class="keyword">in</span> train.keys():</span><br><span class="line">        rank = recommend_res[user][<span class="number">0</span>:N]</span><br><span class="line">        <span class="keyword">for</span> item, pui <span class="keyword">in</span> rank:</span><br><span class="line">            popularity += math.log(<span class="number">1</span> + item_popularity[item])</span><br><span class="line">            n += <span class="number">1</span></span><br><span class="line">    popularity /= n * <span class="number">1.0</span></span><br><span class="line">    <span class="keyword">return</span> popularity</span><br></pre></td></tr></table></figure>
+<h2 id="推荐系统一般分为召回-amp-精排，为什么这样划分？"><a href="#推荐系统一般分为召回-amp-精排，为什么这样划分？" class="headerlink" title="推荐系统一般分为召回 &amp; 精排，为什么这样划分？"></a>推荐系统一般分为召回 &amp; 精排，为什么这样划分？</h2><blockquote>
+<p>物品集量级非常大，召回先选出一部分候选物品，再对这一部分候选物品做精排，计算开销相比于对所有物品做精排大大降低了。</p>
+</blockquote>
+<p>相关知识点：召回、排序（精排）。</p>
+<h3 id="召回"><a href="#召回" class="headerlink" title="召回"></a>召回</h3><p>从海量的物品中，先筛选出一小部分物品作为推荐的候选集。</p>
+<h4 id="召回的目的"><a href="#召回的目的" class="headerlink" title="召回的目的"></a>召回的目的</h4><p>当用户和物品量比较大时，如果直接精排（计算预测得分）复杂度会非常高。计算预测得分通常是计算用户和物品的向量内积，假设 user 和 item 的 embedding 维度都是 D ，用户数为 M ，物品数为 N ，那么计算这个得分的复杂度就是 $O(D^2) *O(MN)$。当 M 和 N 都是百万量级、亿量级时，计算开销会非常大。</p>
+<p>如果可以先从海量的物品中，先筛选出一小部分用户最可能喜欢的物品（召回），例如先选出 N/100 的物品，那么复杂度就是 $\frac{O(D^2) *O(MN)}{100}$ ，降低为原来的一百分之一，计算效率更高了。实际场景中，做热销召回的量级可能是百级，这样一来从百万量级的物品数降低到百量级的物品数，计算开销大大降低！另一方面，大量内容中真正的精品只是少数，对所有内容都计算将非常的低效，会浪费大量资源和时间。</p>
+<h4 id="召回的重要性"><a href="#召回的重要性" class="headerlink" title="召回的重要性"></a>召回的重要性</h4><p>虽然精排模型一直是优化的重点，但召回模型也非常的重要，因为如果召回的内容不对，怎么精排都是错误的。</p>
+<h4 id="召回的方法"><a href="#召回的方法" class="headerlink" title="召回的方法"></a>召回的方法</h4><ol>
+<li>热销召回：将一段时间内的热门内容召回。</li>
+<li>协同召回：基于用户与用户行为的相似性推荐，可以很好的突破一定的限制，发现用户潜在的兴趣偏好。</li>
+<li>标签召回：根据每个用户的行为，构建标签，并根据标签召回内容。</li>
+<li>时间召回：将一段时间内最新的内容召回，在新闻视频等有时效性的领域常用。是常见的几种召回方法。</li>
+</ol>
+<h4 id="多路召回"><a href="#多路召回" class="headerlink" title="多路召回"></a>多路召回</h4><p>一开始我们可能有成千上万的物品，首先要由召回（也叫触发，recall）来挖掘出原则上任何用户有可能感兴趣的东西。这个环节是入口。有时候，单独的召回可能难以做到照顾所有方面，这个时候就需要多路召回。所谓的“多路召回”策略，就是指采用不同的策略、特征或简单模型，分别召回一部分候选集，然后把候选集混合在一起供后续排序模型使用。下图只是一个多路召回的例子，也就是说可以使用多种不同的策略来获取用户排序的候选商品集合，<strong>而具体使用哪些召回策略其实是与业务强相关的</strong>，针对不同的任务就会有对于该业务真实场景下需要考虑的召回规则。例如视频推荐，召回规则可以是“热门视频”、“导演召回”、“演员召回”、“最近上映“、”流行趋势“、”类型召回“等等。</p>
+<p><img src="https://camo.githubusercontent.com/5194f61aac70bfec14ede3fa6b27aed0670f2cd59b5e9ad688f1f526a4c5f658/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303731373230313431313336372e706e67237069635f63656e746572" alt="img" style="zoom:67%;" /></p>
+<h4 id="Embedding召回"><a href="#Embedding召回" class="headerlink" title="Embedding召回"></a>Embedding召回</h4><h3 id="精排"><a href="#精排" class="headerlink" title="精排"></a>精排</h3><p>排序负责将多个召回策略的结果进行个性化排序。</p>
+<h4 id="精排的重要性"><a href="#精排的重要性" class="headerlink" title="精排的重要性"></a>精排的重要性</h4><p>精排是最纯粹的排序，也是最纯粹的机器学习模块。它的目标只有一个，就是<strong>根据手头所有的信息输出最准</strong>的预测。精排一直是优化的重点。召回的物品中，筛选出用户最感兴趣的物品，进一步做出个性化排序，才最终达到推荐的目的。</p>
+<h4 id="精排模型"><a href="#精排模型" class="headerlink" title="精排模型"></a>精排模型</h4><p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/icTMNdGHpfJYqcAFSwiaWKjeqTweM9aJrNKqZVvMn2GZvoDTnPHjYMVywvGicII8P9d4nMjib5Jia8kGlDbicibTGSPlQ/640?wx_fmt=jpeg&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片" style="zoom:67%;" /></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%80/" rel="tag"># 推荐系统基础</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/22/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%803/" rel="prev" title="推荐系统基础3">
+      <i class="fa fa-chevron-left"></i> 推荐系统基础3
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/22/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%802/" rel="next" title="推荐系统基础2">
+      推荐系统基础2 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A11%EF%BC%9A%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%80"><span class="nav-number">1.</span> <span class="nav-text">任务1：推荐系统基础</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E4%B8%8E%E5%B8%B8%E8%A7%81%E7%9A%84%E7%BB%93%E6%9E%84%E5%8C%96%E9%97%AE%E9%A2%98%E7%9A%84%E5%8C%BA%E5%88%AB%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">1.1.</span> <span class="nav-text">推荐系统与常见的结构化问题的区别是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%AF%84%E4%BB%B7%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E3%80%8C%E6%8E%A8%E8%8D%90%E3%80%8D%E7%9A%84%E5%87%86%E4%B8%8D%E5%87%86%EF%BC%9F"><span class="nav-number">1.2.</span> <span class="nav-text">如何评价推荐系统「推荐」的准不准？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E4%B8%80%E8%88%AC%E5%88%86%E4%B8%BA%E5%8F%AC%E5%9B%9E-amp-%E7%B2%BE%E6%8E%92%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E6%A0%B7%E5%88%92%E5%88%86%EF%BC%9F"><span class="nav-number">1.3.</span> <span class="nav-text">推荐系统一般分为召回 &amp; 精排，为什么这样划分？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%AC%E5%9B%9E"><span class="nav-number">1.3.1.</span> <span class="nav-text">召回</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AC%E5%9B%9E%E7%9A%84%E7%9B%AE%E7%9A%84"><span class="nav-number">1.3.1.1.</span> <span class="nav-text">召回的目的</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AC%E5%9B%9E%E7%9A%84%E9%87%8D%E8%A6%81%E6%80%A7"><span class="nav-number">1.3.1.2.</span> <span class="nav-text">召回的重要性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AC%E5%9B%9E%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">1.3.1.3.</span> <span class="nav-text">召回的方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E8%B7%AF%E5%8F%AC%E5%9B%9E"><span class="nav-number">1.3.1.4.</span> <span class="nav-text">多路召回</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Embedding%E5%8F%AC%E5%9B%9E"><span class="nav-number">1.3.1.5.</span> <span class="nav-text">Embedding召回</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B2%BE%E6%8E%92"><span class="nav-number">1.3.2.</span> <span class="nav-text">精排</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%B2%BE%E6%8E%92%E7%9A%84%E9%87%8D%E8%A6%81%E6%80%A7"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">精排的重要性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%B2%BE%E6%8E%92%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.3.2.2.</span> <span class="nav-text">精排模型</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

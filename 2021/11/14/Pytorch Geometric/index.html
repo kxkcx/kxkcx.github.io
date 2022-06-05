@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="官网永远是最好的学习资料：https:&#x2F;&#x2F;pytorch-geometric.readthedocs.io&#x2F;en&#x2F;latest&#x2F; 跟着配套colaboratory的教程走，大概一天能学完五个教程，学完也算基本入门pytroch-geometric了。  1. Introduction.ipynb - Colaboratory (google.com)  This concludes the fi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Pytorch Geometric 学习笔记">
+<meta property="og:url" content="http://guadzilla.github.io/2021/11/14/Pytorch%20Geometric/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="官网永远是最好的学习资料：https:&#x2F;&#x2F;pytorch-geometric.readthedocs.io&#x2F;en&#x2F;latest&#x2F; 跟着配套colaboratory的教程走，大概一天能学完五个教程，学完也算基本入门pytroch-geometric了。  1. Introduction.ipynb - Colaboratory (google.com)  This concludes the fi">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211118204147577.png">
+<meta property="article:published_time" content="2021-11-14T12:39:02.000Z">
+<meta property="article:modified_time" content="2022-03-28T02:44:22.016Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="pytorch">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211118204147577.png">
+
+<link rel="canonical" href="http://guadzilla.github.io/2021/11/14/Pytorch%20Geometric/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Pytorch Geometric 学习笔记 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2021/11/14/Pytorch%20Geometric/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Pytorch Geometric 学习笔记
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-14 20:39:02" itemprop="dateCreated datePublished" datetime="2021-11-14T20:39:02+08:00">2021-11-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-28 10:44:22" itemprop="dateModified" datetime="2022-03-28T10:44:22+08:00">2022-03-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>10 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<p>官网永远是最好的学习资料：<a target="_blank" rel="noopener" href="https://pytorch-geometric.readthedocs.io/en/latest/">https://pytorch-geometric.readthedocs.io/en/latest/</a></p>
+<p>跟着配套colaboratory的教程走，大概一天能学完五个教程，学完也算基本入门pytroch-geometric了。</p>
+<hr>
+<p><a target="_blank" rel="noopener" href="https://colab.research.google.com/drive/1h3-vJGRVloF5zStxL5I0rSy4ZUPNsjy8?usp=sharing#scrollTo=gUFSrDPxuQ23">1. Introduction.ipynb - Colaboratory (google.com)</a></p>
+<ul>
+<li>This concludes the first introduction into the world of GNNs and PyTorch Geometric. In the follow-up sessions, you will learn how to achieve state-of-the-art classification results on a number of real-world graph datasets.</li>
+<li>概要：介绍图的基本结构，GCN怎么用。</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://colab.research.google.com/drive/14OvFnAXggxB8vM4e8vSURUp1TaKnovzX">2. Node Classification.ipynb - Colaboratory (google.com)</a></p>
+<ul>
+<li>In this chapter, you have seen how to apply GNNs to real-world problems, and, in particular, how they can effectively be used for boosting a model’s performance. In the next section, we will look into how GNNs can be used for the task of graph classification.</li>
+<li>概要：用GNN实现某些真实的节点分类任务，与MLP效果更好。</li>
+</ul>
+<span id="more"></span>
+
+<p><a target="_blank" rel="noopener" href="https://colab.research.google.com/drive/1I8a0DfQ3fI7Njc62__mVXUlcAleUclnb?usp=sharing#scrollTo=CN3sRVuaQ88l">3. Graph Classification.ipynb - Colaboratory (google.com)</a></p>
+<ul>
+<li><p>In this chapter, you have learned how to apply GNNs to the task of graph classification. You have learned how graphs can be batched together for better GPU utilization, and how to apply readout layers for obtaining graph embeddings rather than node embeddings.</p>
+<p>In the next session, you will learn how you can utilize PyTorch Geometric to let Graph Neural Networks scale to single large graphs.</p>
+</li>
+<li><p>概要：学习了应用GNN实现图分类。学习了GNN上的mini-batch是如何构造以更好利用GPU。学习了如何用readout层获取图的表示。</p>
+<ul>
+<li>和图像一样用padding和rescaling让图大小相同太浪费空间，所以用对角矩阵相连的方法处理。在torch里是用稀疏矩阵存储的，所以开销不大。</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211118204147577.png" alt="image-20211118204147577"></p>
+<ul>
+<li>Dataloader和torch里差不多 <code>train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)</code>。</li>
+<li><code>DataBatch(edge_index=[2, 2636], x=[1188, 7], edge_attr=[2636, 4], y=[64], batch=[1188], ptr=[65])</code> 里的batch记录的是每个节点在哪个图里，batch = [0,…,0,1,…,1,2,…,2]表示一个batch里有三张图</li>
+<li>nn.GraphConv() 有residual connection。</li>
+<li>图的表示可以写成所有节点的均值<code>x = global_mean_pool(x, batch)</code> </li>
+</ul>
+</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://colab.research.google.com/drive/1XAjcjRHrSR_ypCk_feIWFbcBKyT4Lirs#scrollTo=SDOmdUe0C3U1">4. Scaling GNNs.ipynb - Colaboratory (google.com)</a></p>
+<ul>
+<li><p>In this chapter, you have been presented a method to scale GNNs to large graphs, which otherwise would not fit into GPU memory.</p>
+<p>This also concludes the hands-on tutorial on <strong>deep graph learning with PyTorch Geometric</strong>. If you want to learn more about GNNs or PyTorch Geometric, feel free to check out <strong><a target="_blank" rel="noopener" href="https://pytorch-geometric.readthedocs.io/en/latest/?badge=latest">PyG’s documentation</a></strong>, <strong><a target="_blank" rel="noopener" href="https://github.com/rusty1s/pytorch_geometric">its list of implemented methods</a></strong> as well as <strong><a target="_blank" rel="noopener" href="https://github.com/rusty1s/pytorch_geometric/tree/master/examples">its provided examples</a></strong>, which cover additional topics such as <strong>link prediction</strong>, <strong>graph attention</strong>, <strong>mesh or point cloud convolutions</strong> and <strong>other methods for scaling up GNNs</strong>.</p>
+<p><em>Happy hacking!</em></p>
+</li>
+<li><p>概要：介绍了了降低显存的方法，cluster-gnn，使得训练超大图成为可能。</p>
+</li>
+<li><p>不再在整个图上划分mini-batch，先分成sub-graph再分mini-batch，解决了邻居爆炸（。。邻居数量）问题</p>
+</li>
+<li><p>分太开也不好，所以cluster以后随机对sub-graph再连接</p>
+<ul>
+<li><code>ClusterData</code> converts a <code>Data</code> object into a dataset of subgraphs containing <code>num_parts</code> partitions.</li>
+<li>Given a user-defined <code>batch_size</code>, <code>ClusterLoader</code> implements the stochastic partitioning scheme in order to create mini-batches.</li>
+</ul>
+</li>
+<li><p>这种采样方法，只用改划分数据的代码，训练过程不变。</p>
+</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://colab.research.google.com/drive/1D45E5bUK3gQ40YpZo65ozs7hg5l-eo_U?usp=sharing#scrollTo=iWRxB3JYFXNF">5. Point Cloud Classification.ipynb - Colaboratory (google.com)</a></p>
+<ul>
+<li>概要：介绍了点云分类任务的三大步骤。又在PointNet++和PPFNet的实践中，介绍了如何自定义MessagePassing以及采样策略。</li>
+<li>PointNet++<ul>
+<li><p>Grouping阶段，用knn graph或者半径图</p>
+<ul>
+<li><p>```python<br>from torch_cluster import knn_graph<br>根据点的坐标计算最近的k个点，连起来</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">- 邻居聚合阶段。聚合邻居信息</span><br><span class="line"></span><br><span class="line">  - 从</span><br><span class="line"></span><br><span class="line">    ```python</span><br><span class="line">    class PointNetLayer(torch_geometric.nn.MessagePassing)：</span><br><span class="line">    	def __init__(self, in_channels, out_channels):</span><br><span class="line">            pass</span><br><span class="line">        def forward(self, h, pos, edge_index):</span><br><span class="line">            pass</span><br><span class="line">        def message(self, h_j, pos_j, pos_i):</span><br><span class="line">            pass</span><br></pre></td></tr></table></figure>
+
+<p>继承，并定义出一个与<code>GraphConv()</code> 、<code>GCNConv()</code> 同一级别的类，例如一种新的卷积层。</p>
+</li>
+<li><p>MessagePassing接口通过自动处理消息传播，来帮助我们创建<strong>消息传递图神经网络</strong>。只需要定义 message 功能即可。</p>
+</li>
+<li><p><code>def message()</code>  定义如何构建一个可学习的message给每条边（每个边对应一个邻居，所以也可以看成定义message给每个邻居），以及传播的规则</p>
+</li>
+<li><p><code>def forward()</code>  调用propagate()，开始传播</p>
+</li>
+<li><p>PPFNet，解决旋转不变性</p>
+</li>
+</ul>
+</li>
+<li><p>downsampling（下采样）阶段</p>
+<ul>
+<li><p><strong>Farthest Point Sampling</strong> (FPS) 最远点采样。使得每次采点都和已经采样的点距离最远。这种方式证明比随机采样更能覆盖整个点集。</p>
+</li>
+<li><p>不同batch中fps是独立的，所以要传入batch向量</p>
+<ul>
+<li><pre><code class="python">index = fps(pos, batch, ratio=0.5)
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[6. GNN Explanation.ipynb - Colaboratory (google.com)](https://colab.research.google.com/drive/1fLJbFPz0yMCQg81DdCP5I8jXw9LoggKO?usp=sharing#scrollTo=F1op-CbyLuN4)</span><br><span class="line"></span><br><span class="line">- 占坑</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># 安装</span><br><span class="line"></span><br><span class="line">建个新环境</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+conda create -n pyg python==3.8.0
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">安装torch</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+pip install torch==1.10.0
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">安装依赖包</span><br><span class="line"></span><br><span class="line">## 方法1：</span><br><span class="line"></span><br><span class="line">![image-20211115163907936](C:\Users\pc\OneDrive\Typora文档\images\image-20211115163907936.png)</span><br><span class="line"></span><br><span class="line">官网安装比较省事，但是可以看到只有最新的几个版本，如果你的pytorch版本比较旧（旧也是为了稳定...）可以尝试方法2。</span><br><span class="line"></span><br><span class="line">## 方法2：</span><br><span class="line"></span><br><span class="line">https://data.pyg.org/whl/</span><br><span class="line"></span><br><span class="line">根据pytorch版本和cuda版本，在这个网站选择对应版本进入，例如我是torch-1.10和cuda-10.2，所以进入https://data.pyg.org/whl/torch-1.10.0+cu102.html</span><br><span class="line"></span><br><span class="line">然后根据系统类型和python版本，下好安装包，如下</span><br><span class="line"></span><br><span class="line">torch_**scatter**-2.0.9-cp38-cp38-linux_x86_64.whl</span><br><span class="line"></span><br><span class="line">torch_**sparse**-0.6.12-cp38-cp38-linux_x86_64.whl</span><br><span class="line"></span><br><span class="line">torch_**cluster**-1.5.9-cp38-cp38-linux_x86_64.whl</span><br><span class="line"></span><br><span class="line">torch_spline_conv-1.2.1-cp38-cp38-linux_x86_64.whl</span><br><span class="line"></span><br><span class="line">最后用pip离线离线安装</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+pip install xxx.whl
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>注意要切换到安装目录，且按顺序安装 scatter–&gt;sparse–&gt;cluster–&gt;spline</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pytorch/" rel="tag"># pytorch</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/11/06/SASRec%E4%BB%A3%E7%A0%81/" rel="prev" title="SASRec代码笔记">
+      <i class="fa fa-chevron-left"></i> SASRec代码笔记
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/11/18/TiSASRec/" rel="next" title="论文笔记：《Time Interval Aware Self-Attention for Sequential Recommendation》">
+      论文笔记：《Time Interval Aware Self-Attention for Sequential Recommendation》 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

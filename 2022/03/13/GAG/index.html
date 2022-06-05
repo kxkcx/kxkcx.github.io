@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="原paper：GAG: Global Attributed Graph Neural Network for Streaming Session-Based Recommendation 源码解读：（近期发布）  中译：基于流会话推荐的全局属性图神经网络 总结：将SSRM的encoder部分换成了图神经网络模型，并且沿用了NARM、SRGNN等采用的注意力机制，将用户信息作为全局信息融入GNN">
+<meta property="og:type" content="article">
+<meta property="og:title" content="论文笔记：《GAG：Global Attributed Graph Neural Network for Streaming Session-based Recommendation》">
+<meta property="og:url" content="http://guadzilla.github.io/2022/03/13/GAG/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="原paper：GAG: Global Attributed Graph Neural Network for Streaming Session-Based Recommendation 源码解读：（近期发布）  中译：基于流会话推荐的全局属性图神经网络 总结：将SSRM的encoder部分换成了图神经网络模型，并且沿用了NARM、SRGNN等采用的注意力机制，将用户信息作为全局信息融入GNN">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220309191028621.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220309205703438.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220312132405693.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220313210103872.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220314084551972.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220314085304068.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220314091613738.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220314092750543.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314100934020.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314100603124.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314103059323.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314104151741.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314104403575.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314104558903.png">
+<meta property="article:published_time" content="2022-03-12T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-03-28T02:43:34.334Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="流会话推荐">
+<meta property="article:tag" content="GAG">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220309191028621.png">
+
+<link rel="canonical" href="http://guadzilla.github.io/2022/03/13/GAG/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>论文笔记：《GAG：Global Attributed Graph Neural Network for Streaming Session-based Recommendation》 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/03/13/GAG/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          论文笔记：《GAG：Global Attributed Graph Neural Network for Streaming Session-based Recommendation》
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-03-13 00:00:00" itemprop="dateCreated datePublished" datetime="2022-03-13T00:00:00+08:00">2022-03-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-28 10:43:34" itemprop="dateModified" datetime="2022-03-28T10:43:34+08:00">2022-03-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">论文笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>7.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>18 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220309191028621.png" alt="image-20220309191028621"></p>
+<hr>
+<p>原paper：<a target="_blank" rel="noopener" href="https://doi.org/10.1145/3397271.3401109"><em>GAG: Global Attributed Graph Neural Network for Streaming Session-Based Recommendation</em></a></p>
+<p>源码解读：（近期发布）</p>
+<hr>
+<p>中译：基于流会话推荐的全局属性图神经网络</p>
+<p>总结：将SSRM的encoder部分换成了图神经网络模型，并且沿用了NARM、SRGNN等采用的注意力机制，将用户信息作为全局信息融入GNN模型中，解决了保存用户长期兴趣的问题；改进了reservior的采样策略：计算推荐结果和真实交互的Wasserstein距离作为信息量指标，从而计算采样概率，改进采样策略。</p>
+<p>展望：如何引入跨会话信息到SSR问题中，十分值得研究。</p>
+<hr>
+<span id="more"></span>
+
+<h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><ul>
+<li><p>question作者想解决什么问题？ </p>
+<p>1）SR任务中，用户信息常常被忽略，所以难以抓住用户的长期兴趣。SSR任务中，流数据常常是单个交互而不是会话数据。</p>
+<p>2）如何设计适合SSR的通用的reservoir。</p>
+</li>
+<li><p>method作者通过什么理论/模型来解决这个问题？</p>
+<p>针对1），作者提出 <strong>G</strong>lobal <strong>A</strong>ttributed <strong>G</strong>raph （GAG）neural network，全局属性的图神经网络。每当新数据到达时，GAG可以同时考虑全局属性和当前场景，以获得会话和用户的更全面的表示。</p>
+<p>针对2）作者提出了 Wasserstein 存储库，帮助保存历史数据的<strong>代表性</strong>画像。</p>
+</li>
+<li><p>answer作者给出的答案是什么？</p>
+<p>GAG + Wasserstein reservoir，取得了SOTA。</p>
+</li>
+</ul>
+<h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><ul>
+<li><p>why作者为什么研究这个课题？    </p>
+<p>会话推荐的发展现状：大部分会话推荐模型都专注与静态场景，“流会话”(Streaming session)的设定更贴近实际，但却很少研究。由于用户的喜好在随时间变化，所以对新数据做预测，仍然使用在原来数据上训练的静态模型是不合理的，为了更准确地捕捉用户兴趣，模型应该用最新的数据在线更新。</p>
+<p>流推荐的发展现状：一些方法利用了存储技术解决流任务，但是它们的缺点是，交互数据都已相同概率存储到存储库中，这是一种离散的方式存储会话，有信息损失，捕捉不了连续的会话序列模式。还有一些在线学习的方法，每当新数据到来，模型就相应地更新，这会导致模型对新数据过拟合并且无法有效保留用户的长期兴趣。</p>
+<p>只有SSRM提出了一个结合两者的解决方案，但有不足之处。</p>
+</li>
+<li><p>how当前研究到了哪一阶段？</p>
+<p>SSRM。SSRM有两方面不足：1）计算信息量时，需要预先获得所有物品的隐含表示（MF方法得到的），别的方法不适用。2）模型将会话推荐的方法（GRU4Rec）和矩阵分解（MF）直接结合，这里原文是用MF计算的权重，对GRU4Rec的隐藏状态加权求和。很难学到用户和物品间更复杂的关联。</p>
+</li>
+</ul>
+<h2 id="Dataset-amp-Metric"><a href="#Dataset-amp-Metric" class="headerlink" title="Dataset &amp; Metric"></a>Dataset &amp; Metric</h2><ul>
+<li>数据来源 </li>
+</ul>
+<p>LastFM：<a target="_blank" rel="noopener" href="http://mtg.upf.edu/static/datasets/last.fm/lastfm-dataset-1K.tar.gz">http://mtg.upf.edu/static/datasets/last.fm/lastfm-dataset-1K.tar.gz</a></p>
+<p>Gowalla：<a target="_blank" rel="noopener" href="https://snap.stanford.edu/data/loc-gowalla.html">https://snap.stanford.edu/data/loc-gowalla.html</a></p>
+<ul>
+<li>数据划分</li>
+</ul>
+<p>给数据集 $D$ 中的会话按时间排序，分成前60%作为训练集，和后40%作为候选集。为了模拟线上的流数据输入，将候选集再划分成5个等长切片作为测试机。第一个测试机和10%的训练集作为验证集。实验中，若要预测第 $i$ 个测试集的序列行为，那么 $i$ 之前的测试集切片都用作在线训练。</p>
+<ul>
+<li>重要指标 </li>
+</ul>
+<p>MRR@20、Recall@20</p>
+<h2 id="Related-Work"><a href="#Related-Work" class="headerlink" title="Related Work"></a>Related Work</h2><ul>
+<li>会话推荐Session-based Recommendation<ul>
+<li>属于序列推荐</li>
+</ul>
+</li>
+<li>流推荐Streaming Recommendation<ul>
+<li>属于在线学习Online Learning，大多数在线学习更关注新数据，往往不能记忆历史交互</li>
+<li>随机采样Random Sampling 方法是为了解决 “历史遗忘“问题而提出的，它通过引入一个储存库来保存用户的长期交互。</li>
+</ul>
+</li>
+</ul>
+<h2 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h2><h3 id="任务定义"><a href="#任务定义" class="headerlink" title="任务定义"></a>任务定义</h3><p>Item embdding： $ x_i =Embed_v(v_i)$ ；User embdding： $ p_j =Embed_u(u_j)$  ；</p>
+<p>User u 在时间步 t 的会话序列：$ S_{u,t}=[v_1,v_2,…,v_l]$ </p>
+<p>任务目标，根据用户 $u$ 的历史会话 ${S_{u,0},S_{u,1},…,S_{u,t}}$ 预测下一个可能交互的物品 $ v_{t+1}$ </p>
+<p>与会话推荐不同的是，这里假设所有会话 $S$ 都以很快的速度达到，所以受限于算力，必须选取高效的方式处理历史会话信息和当前会话信息。而会话推荐，没有流数据这一设定，可以同时处理用户所有序列，不必考虑效率。</p>
+<h3 id="GAG模型框架"><a href="#GAG模型框架" class="headerlink" title="GAG模型框架"></a>GAG模型框架</h3><p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220309205703438.png" alt="image-20220309205703438"></p>
+<p>GAG的主要工作由两部分构成，1）GAG model：将用户信息转化为全局属性并将其融入到会话图中；2）Wasserstein reservoir存储库策略用来学习流数据。</p>
+<h3 id="Global-Attributed-Graph-GAG"><a href="#Global-Attributed-Graph-GAG" class="headerlink" title="Global Attributed Graph (GAG)"></a>Global Attributed Graph (GAG)</h3><h4 id="全局属性的会话图"><a href="#全局属性的会话图" class="headerlink" title="全局属性的会话图"></a>全局属性的会话图</h4><p>建图方式和SRGNN一样，建成有向图，不同的是加入了 <strong>全局属性（用户属性）</strong> $u$  变成三元组 $G_s = (u,V_s,E_s)$ ，图的边定义为：$E_s=(w_{s,(n-1)n},v_{n-1},v_n)$ ，也是三元组， $w$ 是权重，和SRGNN计算方式一样，基于该边出现的频率。</p>
+<h4 id="全局属性的图神经网络"><a href="#全局属性的图神经网络" class="headerlink" title="全局属性的图神经网络"></a>全局属性的图神经网络</h4><p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220312132405693.png" alt="image-20220312132405693"></p>
+<p>会话图作为输入进到GAG模型，模型的计算从边、节点到全局属性。</p>
+<ol>
+<li>逐边更新 per-edge update</li>
+</ol>
+<p>边特征在这里指的是边的权值，是固定值，不是dense vector，不会更新。所以边信息只用来更新节点特征和全局特征。因为是有向图，所以对于一条边来说，需要双向更新，一个节点既作为sender，也作为receiver。更新公式：<br>$$<br>\begin{equation}<br>\begin{aligned}<br>e_{k,in}’ &amp;= \phi ^e_{in}(e_k,v_{r_k},v_{s_k},u)<br>\&amp;= w_k \cdot MLP(v_{s_k}||u),<br>\<br>e_{k,out}’ &amp;= \phi ^e_{out}(e_k,v_{r_k},v_{s_k},u)<br>\&amp;= w_k \cdot MLP(v_{s_k}||u),<br>\end{aligned}<br>\end{equation}<br>$$<br>其中两个MLP是不共享权重的，因为含义不同，一个是计算sender方向的特征，一个是计算receiver方向的特征。</p>
+<ol start="2">
+<li>逐点更新 per-node update</li>
+</ol>
+<p>逐点更新是基于逐边更新的结果的。逐点更新的结果是包含所有入or出的邻居信息的标准化后的加和。以第一个公式为例， $s_j$ 是所有指向 $r_i$（也即 $i$ ） 的邻居。节点 $i$ 的<strong>节点</strong>的 in-coming feature 是所有指向 $i$ 的<strong>边的</strong>标准化后的 out-going feature 的加和。 标准化是将 $j$ 指向 $i$ 的这条边的 out-going feature 除以 $\sqrt{i的入度 \cdot j的出度}$ ，可以看出， $j$ 的出度越大（从 $j$ 发出的边越多），$i$ 的入度越大（指向 $i$ 的边越多），都会导致 $i$ 来自节点 $j$ 的 in-coming feature 值越小。这是符合直觉的。<br>$$<br>\begin{equation}<br>\begin{aligned}<br>v_{i,in}’ =\sum_{j \in { v_{s_j} = v_{r_i}}} \frac{e_{j,out’}}{\sqrt{N_{in}(i)N_{out}(j)}}<br>\<br>v_{i,out}’ =\sum_{j \in { v_{r_j} = v_{s_i}}} \frac{e_{j,in’}}{\sqrt{N_{out}(i)N_{in}(j)}} </p>
+<p>\end{aligned}<br>\end{equation}<br>$$</p>
+<ol start="3">
+<li>节点的最终表示</li>
+</ol>
+<p>最后节点 $i$ 表示融合了自己的 in-coming feature 和 out-going feature，节点最后的表示实际上包含了 1）自身的节点信息；2）邻居信息（通过边传播）；3）连接的边的权重；4）全局属性：<br>$$<br>v_i’= MLP (v_{i,in}’ || v_{i,out}’)<br>$$</p>
+<ol start="4">
+<li>会话表示</li>
+</ol>
+<p>与NARM、STAMP、SRGNN工作类似，也用序列中的最后一个节点对其它节点做 self-attention 。有的工作用内积计算最后一个节点与其他节点的相似度作为权重，如NARM；也有用MLP获得权重的，如STAMP、SRGNN。这里用MLP。<br>$$<br>\begin{equation}<br>\begin{aligned}<br>\<br>u’ &amp;= \phi ^ u (V’,u)<br>\<br>&amp;= Self-Atten(v_l’,v_i’,u) + u</p>
+<p>\end{aligned}<br>\end{equation}<br>$$<br>Self-Atten 分为以下两个部分：<br>$$<br>\begin{equation}<br>\begin{aligned}</p>
+<p>\alpha <em>i &amp;= MLP(v_l’||v_i’||u)<br>\<br>u</em>{s,g} &amp;= \sum ^n _{i=1} \alpha_i v_i’<br>\end{aligned}<br>\end{equation}<br>$$</p>
+<p>这样得到的 $u_{s,g}$ 可以看作short-term兴趣增强的会话表示，再融合全局属性 $u$ ，得到长短期兴趣结合的会话表示： $u’ = u_{s,g} + u$ 。这种residual connection残差连接的方式，还可以减轻直接学习全局属性 $u$ 的负担。</p>
+<h3 id="推荐-预测"><a href="#推荐-预测" class="headerlink" title="推荐/预测"></a>推荐/预测</h3><p>Session embedding 和 item embedding 做内积，再经过softmax得到概率分布： $\hat y = Softmax(u’^T X)$ 。</p>
+<h3 id="Wasserstein-Reservoir"><a href="#Wasserstein-Reservoir" class="headerlink" title="Wasserstein Reservoir"></a>Wasserstein Reservoir</h3><p>将离线模型拓展到流设定下，提出Wasserstein reservoir方法。提出该方法的目标是：用新来的数据更新模型，并且保持从历史交互中学到的知识。</p>
+<p>传统的在线学习方法通常只用新数据更新模型，所以导致模型会忘记过去的知识。为了避免这一点，本文利用reservoir来保持对历史数据的长期记忆，reservoir技术在流数据库管理系统中非常常见。</p>
+<p>如何选择reservoir中的数据？之前的方法是：使用随机采样方法。每个新数据都以 $\frac{|C|}{t}$ 的概率随机替换掉已经在 $C$ 中的数据。这种方法被证明是从当前数据集中随机采样，并且可以保持模型的long-term memory。</p>
+<p>作者认为，使用以上的随机采样方法得到 $C$ ，把它当作训练数据来训练模型的方式不好，原因如下：随机采样难以更关心新数据（time descent probability），但是最近的数据又是非常重要的。所以应该用新来的数据和reservoir $C$ 中的老数据一起更新预训练的模型，而不光光是reservoir $C$ 中的老数据。</p>
+<p>但是，即便用新老数据一起更新模型，由于随机采样策略没变，训练数据中的大部分数据都是long-term数据，模型早就学得很好了，所以用它来训练对模型更新帮助不大。</p>
+<p>如果当前模型在最新会话上预测结果不好，可能意味着用户兴趣转移or当前模型无法捕捉一些转换模式。这样的数据称之为”有信息量的数据“，对模型更新意义更大。</p>
+<p>在本文中，一个会话的信息量被定义为模型预测的分布 $\hat y$ 和真实交互 $y$ 的距离。下面是三种计算距离的算法：</p>
+<ol>
+<li>Wasserstein 距离（EMD 距离）：</li>
+</ol>
+<p>$$<br>d_{W}\left(\mathbb{P}<em>{r}, \mathbb{P}</em>{g}\right)=\inf <em>{\gamma \in \Pi\left(\mathbb{P}</em>{r}, \mathbb{P}<em>{g}\right)} \mathbb{E}</em>{(x, y) \sim \gamma}[|x-y|]<br>$$</p>
+<ol start="2">
+<li>Kullback-Leibler（KL）散度：</li>
+</ol>
+<p>$$<br>d_{K L}\left(\mathbb{P}<em>{r} | \mathbb{P}</em>{g}\right)=\sum_{i=1}^{n} P_{r}(x) \log \frac{P_{r}(x)}{P_{g}(x)}<br>$$</p>
+<ol start="3">
+<li>Total Variation（全变分）距离：</li>
+</ol>
+<p>$$<br>d_{T V}\left(\mathbb{P}<em>{r}, \mathbb{P}</em>{g}\right)=\sup <em>{A \in \Sigma}\left|\mathbb{P}</em>{r}(A)-\mathbb{P}_{g}(A)\right|<br>$$</p>
+<p>在推荐任务中，真实分布是one-hot向量，只有真实标签处为1。</p>
+<p>KL散度，也称交叉熵、相对熵。不选择KL散度的原因是：在推荐任务中，公式简化为：$d_{K L}(\mathbf{y} | \hat{\mathbf{y}})=-\log P_{g}\left(v_{i}\right)$ ，实际上只衡量了真实标签处的差异，没有考虑整个分布之间的差异。而且KL散度本身就是非对称性函数：$D(p | q) \neq D(q | p)$ ，用它作为一个真正的距离度量可能不是很合适。</p>
+<p>不选择全变分距离的原因是：在推荐任务中，公式简化为： $d_{T V}(\mathbf{y}, \hat{\mathbf{y}})=\max <em>{j \neq i}\left(1-P</em>{g}\left(v_{i}\right), P_{g}\left(v_{j}\right)\right)$  ，这个结果要么只衡量了真实标签以外的差异，要么只衡量了真实标签。</p>
+<h4 id="在线训练算法描述"><a href="#在线训练算法描述" class="headerlink" title="在线训练算法描述"></a>在线训练算法描述</h4><p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220313210103872.png" alt="image-20220313210103872"></p>
+<p>$S$ 是用来更新模型的，与 $C$ 无关。</p>
+<p>因为流数据中会有新用户和新物品出现，为了防止模型忽略这些新的会话，它们会被直接加入 $S$ 当作训练数据。</p>
+<p>$C \cup C^{n e w} - S$ 即其余的会话数据，分别计算它们的Wasserstein距离，再根据以下公式计算各自的采样概率：<br>$$<br>p_{\text {sample }}\left(s_{i}\right)=\frac{d_{i}}{\sum_{s_{j} \in C \cup C^{n e w}-S} d_{j}},<br>$$<br>采样完以后就得到训练数据 $S$ ，这个 $S$ 是对当前模型来说信息量最大的数据集，用它来更新模型最有效。</p>
+<p>最后还要更新 reservoir $C$ ，用随机采样算法来更新，以保持模型的 long-term 记忆。</p>
+<h3 id="模型训练"><a href="#模型训练" class="headerlink" title="模型训练"></a>模型训练</h3><p>$ Cross \ Entropy \ Loss=-\sum_{i=1}^{l} \mathrm{y}<em>{i} \log \left(\hat{\mathrm{y}}</em>{i}\right) $</p>
+<h2 id="Experiment-amp-Table"><a href="#Experiment-amp-Table" class="headerlink" title="Experiment &amp; Table"></a>Experiment &amp; Table</h2><h3 id="对比实验结果"><a href="#对比实验结果" class="headerlink" title="对比实验结果"></a>对比实验结果</h3><p>S-POP居然比GRU4Rec结果好，可能因为S-POP能抽取出会话间的信息。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220314084551972.png" alt="image-20220314084551972"></p>
+<h3 id="细化评价指标的top-k"><a href="#细化评价指标的top-k" class="headerlink" title="细化评价指标的top k"></a>细化评价指标的top k</h3><p>SSRM方法相比于另外三个基于图的方法，效果下降得幅度更大，说明图结构更适合做会话表示任务，也说明图结构有一定的泛化能力。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220314085304068.png" alt="image-20220314085304068"></p>
+<h3 id="全局属性的影响"><a href="#全局属性的影响" class="headerlink" title="全局属性的影响"></a>全局属性的影响</h3><p>三个消融实验的对比模型如下：</p>
+<ul>
+<li><p>FGNN：节点更新层和输出层都不加入用户信息。</p>
+</li>
+<li><p>GAG-FGNN：将节点更新函数换成FGNN的节点更新层，但是保留全局属性更新  $u’ = u_{s,g} + u$ 。</p>
+</li>
+<li><p>GAG-NoGA：节点更新层不变，但是去掉全局属性更新函数 $u’ = u_{s,g} + u$ 。</p>
+</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220314091613738.png" alt="image-20220314091613738"></p>
+<p>结果如下。GAG-FGNN和GAG-NoGA都在模型中融入了全局信息，前者在用户信息更新部分，后者在GNN的节点更新部分。相比于没有全局信息的FGNN，两者都有提升，说明融入全局信息对推荐是有用的。GAG-NoGA比GAG-FGNN提升更大，说明在节点更新阶段融入全局信息更有效。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220314092750543.png" alt="image-20220314092750543"></p>
+<h3 id="Wasserstein-Reservoir的影响"><a href="#Wasserstein-Reservoir的影响" class="headerlink" title="Wasserstein Reservoir的影响"></a>Wasserstein Reservoir的影响</h3><p>消融实验的对比模型如下：</p>
+<ul>
+<li>GAG-Static：直接去掉在线训练部分</li>
+<li>GAG-RanUni：从原reservoir和新数据的并集里，随机采样。这也是最普遍的设计。</li>
+<li>GAG-FixNew：直接保留新数据，剩下的数据随机采样。</li>
+<li>GAG-WassUni：对所有原reservoir和新数据计算Wasserstein距离，然后根据这个距离采样。（原模型是先全部保存所有带有新用户和新物品的会话，再根据Wass距离采样）</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314100934020.png" alt="image-20220314100934020"></p>
+<p>结果如下：</p>
+<p>Static结果最差，因为：1）兴趣漂移；2）新用户、新物品出现。</p>
+<p>纯随机采样的GAG-RanUni，在在线模型中结果最差，不如有策略地选择。</p>
+<p>GAG-WassUni优于大部分策略，说明采用Wass距离的有效性。</p>
+<p>GAG和GAG-WassUni相比，GAG结果更好，说明保留新用户和新物品的重要性。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314100603124.png" alt="image-20220314100603124"></p>
+<h3 id="Reservoir-效率分析"><a href="#Reservoir-效率分析" class="headerlink" title="Reservoir 效率分析"></a>Reservoir 效率分析</h3><p>有两个参数reservoir的设计影响很大：reservoir大小（ $C$ ）和窗口大小（ $S$ ）。一方面，reservoir的大小表示reservoir的容量，这决定了推荐系统在线更新的存储要求。另一方面，窗口大小限制了多少数据实例将被抽样用于在线训练，这代表了推荐系统在线更新的工作负荷。</p>
+<h4 id="Reservoir-size-的影响"><a href="#Reservoir-size-的影响" class="headerlink" title="Reservoir size 的影响"></a>Reservoir size 的影响</h4><p>Reservoir容量越大，新数据保存的概率就越低，模型就更注重历史数据。但是在流设定下，新数据更能代表用户最近的兴趣。SOTA模型SSRM在$\frac{|D|}{20}$ 时表现最好，而GAG是 $\frac{|D|}{100}$ ，所以GAG效率更高。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314103059323.png" alt="image-20220314103059323"></p>
+<h4 id="Window-size-的影响"><a href="#Window-size-的影响" class="headerlink" title="Window size 的影响"></a>Window size 的影响</h4><p>很明显，窗口大小越大，模型表现越好。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314104151741.png" alt="image-20220314104151741"></p>
+<h3 id="超参数的影响"><a href="#超参数的影响" class="headerlink" title="超参数的影响"></a>超参数的影响</h3><h4 id="Embedding-size影响"><a href="#Embedding-size影响" class="headerlink" title="Embedding size影响"></a>Embedding size影响</h4><p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314104403575.png" alt="image-20220314104403575"></p>
+<h4 id="GNN-layer层数影响"><a href="#GNN-layer层数影响" class="headerlink" title="GNN layer层数影响"></a>GNN layer层数影响</h4><p>一般来说，由于梯度爆炸，GNN模型总是受到模型深度增加的影响。在我们的实验中，GAG模型的性能随着GNN 层数增加而下降，这与常见的观察是一致的。此外，会话的连通性比传统的图数据要小，这也限制了更深的GNN模型的能力。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/lenovo/image-20220314104558903.png" alt="image-20220314104558903"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B5%81%E4%BC%9A%E8%AF%9D%E6%8E%A8%E8%8D%90/" rel="tag"># 流会话推荐</a>
+              <a href="/tags/GAG/" rel="tag"># GAG</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/07/SSRM/" rel="prev" title="论文笔记：《Streaming Session-based Recommendation》">
+      <i class="fa fa-chevron-left"></i> 论文笔记：《Streaming Session-based Recommendation》
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/04/05/Docker%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4/" rel="next" title="Docker常用命令">
+      Docker常用命令 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">2.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dataset-amp-Metric"><span class="nav-number">3.</span> <span class="nav-text">Dataset &amp; Metric</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Related-Work"><span class="nav-number">4.</span> <span class="nav-text">Related Work</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Method"><span class="nav-number">5.</span> <span class="nav-text">Method</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A1%E5%AE%9A%E4%B9%89"><span class="nav-number">5.1.</span> <span class="nav-text">任务定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GAG%E6%A8%A1%E5%9E%8B%E6%A1%86%E6%9E%B6"><span class="nav-number">5.2.</span> <span class="nav-text">GAG模型框架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Global-Attributed-Graph-GAG"><span class="nav-number">5.3.</span> <span class="nav-text">Global Attributed Graph (GAG)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%A8%E5%B1%80%E5%B1%9E%E6%80%A7%E7%9A%84%E4%BC%9A%E8%AF%9D%E5%9B%BE"><span class="nav-number">5.3.1.</span> <span class="nav-text">全局属性的会话图</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%A8%E5%B1%80%E5%B1%9E%E6%80%A7%E7%9A%84%E5%9B%BE%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C"><span class="nav-number">5.3.2.</span> <span class="nav-text">全局属性的图神经网络</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A8%E8%8D%90-%E9%A2%84%E6%B5%8B"><span class="nav-number">5.4.</span> <span class="nav-text">推荐&#x2F;预测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Wasserstein-Reservoir"><span class="nav-number">5.5.</span> <span class="nav-text">Wasserstein Reservoir</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9C%A8%E7%BA%BF%E8%AE%AD%E7%BB%83%E7%AE%97%E6%B3%95%E6%8F%8F%E8%BF%B0"><span class="nav-number">5.5.1.</span> <span class="nav-text">在线训练算法描述</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83"><span class="nav-number">5.6.</span> <span class="nav-text">模型训练</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Experiment-amp-Table"><span class="nav-number">6.</span> <span class="nav-text">Experiment &amp; Table</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E6%AF%94%E5%AE%9E%E9%AA%8C%E7%BB%93%E6%9E%9C"><span class="nav-number">6.1.</span> <span class="nav-text">对比实验结果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%86%E5%8C%96%E8%AF%84%E4%BB%B7%E6%8C%87%E6%A0%87%E7%9A%84top-k"><span class="nav-number">6.2.</span> <span class="nav-text">细化评价指标的top k</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%A8%E5%B1%80%E5%B1%9E%E6%80%A7%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">6.3.</span> <span class="nav-text">全局属性的影响</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Wasserstein-Reservoir%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">6.4.</span> <span class="nav-text">Wasserstein Reservoir的影响</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Reservoir-%E6%95%88%E7%8E%87%E5%88%86%E6%9E%90"><span class="nav-number">6.5.</span> <span class="nav-text">Reservoir 效率分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Reservoir-size-%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">6.5.1.</span> <span class="nav-text">Reservoir size 的影响</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Window-size-%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">6.5.2.</span> <span class="nav-text">Window size 的影响</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B6%85%E5%8F%82%E6%95%B0%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">6.6.</span> <span class="nav-text">超参数的影响</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Embedding-size%E5%BD%B1%E5%93%8D"><span class="nav-number">6.6.1.</span> <span class="nav-text">Embedding size影响</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#GNN-layer%E5%B1%82%E6%95%B0%E5%BD%B1%E5%93%8D"><span class="nav-number">6.6.2.</span> <span class="nav-text">GNN layer层数影响</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

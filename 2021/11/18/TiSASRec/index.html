@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="原paper：https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.1145&#x2F;3336191.3371786 源码解读：https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Paper_notebook&#x2F;tree&#x2F;main&#x2F;TiSASRec  中译：时间间隔感知的自注意力序列推荐 总结：是SASRec工作的延续，在self-attention的基础上加了绝对位置信息和相对时间间隔信息（加在Q">
+<meta property="og:type" content="article">
+<meta property="og:title" content="论文笔记：《Time Interval Aware Self-Attention for Sequential Recommendation》">
+<meta property="og:url" content="http://guadzilla.github.io/2021/11/18/TiSASRec/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="原paper：https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.1145&#x2F;3336191.3371786 源码解读：https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Paper_notebook&#x2F;tree&#x2F;main&#x2F;TiSASRec  中译：时间间隔感知的自注意力序列推荐 总结：是SASRec工作的延续，在self-attention的基础上加了绝对位置信息和相对时间间隔信息（加在Q">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117164643993.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211116223143274.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211116223530787.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211116225152019.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117222616679.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117081419839.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117081413089.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117222727853.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117090739720.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117093429227.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117093655881.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117093809122.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117094112160.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117095415283.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117100703091.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117101056812.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117103132511.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117103534252.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117103553274.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117114708312.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117114729528.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117104027269.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117104705615.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117105425551.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117110513024.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117111955529.png">
+<meta property="article:published_time" content="2021-11-18T12:39:02.000Z">
+<meta property="article:modified_time" content="2022-03-28T02:46:47.207Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="序列推荐">
+<meta property="article:tag" content="自注意力">
+<meta property="article:tag" content="TiSASRec">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117164643993.png">
+
+<link rel="canonical" href="http://guadzilla.github.io/2021/11/18/TiSASRec/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>论文笔记：《Time Interval Aware Self-Attention for Sequential Recommendation》 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2021/11/18/TiSASRec/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          论文笔记：《Time Interval Aware Self-Attention for Sequential Recommendation》
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-18 20:39:02" itemprop="dateCreated datePublished" datetime="2021-11-18T20:39:02+08:00">2021-11-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-28 10:46:47" itemprop="dateModified" datetime="2022-03-28T10:46:47+08:00">2022-03-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">论文笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>13 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117164643993.png"></p>
+<hr>
+<p>原paper：<a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/3336191.3371786">https://dl.acm.org/doi/10.1145/3336191.3371786</a></p>
+<p>源码解读：<a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Paper_notebook/tree/main/TiSASRec">https://github.com/Guadzilla/Paper_notebook/tree/main/TiSASRec</a></p>
+<hr>
+<p>中译：时间间隔感知的自注意力序列推荐</p>
+<p>总结：是SASRec工作的延续，在self-attention的基础上加了绝对位置信息和相对时间间隔信息（加在Q和K里）取得了更好的performamce。发现Beauty数据集序列模式不明显。</p>
+<span id="more"></span>
+
+<h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><ul>
+<li>  <strong>question作者想解决什么问题？</strong></li>
+</ul>
+<p>MC模型和RNN模型都只将用户交互作为有序序列（一种强假设），却没有考虑交互与交互之间的时间间隔。</p>
+<ul>
+<li>  <strong>method作者通过什么理论/模型来解决这个问题？</strong></li>
+</ul>
+<p>在序列模型的结构中显式建模交互的时间戳（timestamps），并且探索不同时间间隔对next item推荐的影响。提出TiSASRec模型，模型建模了item在序列中的绝对位置以及交互之间的时间间隔。</p>
+<ul>
+<li>  <strong>answer作者给出的答案是什么？</strong></li>
+</ul>
+<p>展示了不同设定下TiSASRec的特点，比较了不同位置编码下自注意力模块的表现。在dense和sparse数据集都取得了SOTA。</p>
+<h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><ul>
+<li>  <strong>why作者为什么研究这个课题？</strong></li>
+</ul>
+<p>Temporal recommendation（实时推荐）主要建模“绝对时间”来捕获用户与物品的实时动态，即挖掘实时模式、依据时间建模。Sequential recommendation（序列推荐）主要依据交互的顺序挖掘序列模式。序列推荐只用timestamps来决定item顺序，其实假设了所有交互之间是等间隔的。但一天之内产生的序列和一个月内产生的序列显然对next item的影响区别很大。</p>
+<ul>
+<li>  <strong>how当前研究到了哪一阶段</strong></li>
+</ul>
+<p>目前的序列推荐只挖掘序列模式，即假设交互之间是等间隔的，不合理。有模型使用自注意力+相对位置编码[1]，受到启发。</p>
+<ul>
+<li>  <strong>what作者基于什么样的假设（看不懂最后去查）</strong></li>
+</ul>
+<p>交互序列应该被建模为包含时间间隔的序列。</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><ul>
+<li><p><strong>优点</strong></p>
+<ul>
+<li>  结合了<strong>绝对位置编码</strong>和<strong>相对时间间隔</strong>编码的优点。</li>
+<li>  证明了使用相对时间间隔的有效性。</li>
+</ul>
+</li>
+<li><p>  <strong>缺点</strong></p>
+</li>
+<li><p>  <strong>展望</strong></p>
+</li>
+</ul>
+<h2 id="Dataset-amp-Metric"><a href="#Dataset-amp-Metric" class="headerlink" title="Dataset &amp; Metric"></a>Dataset &amp; Metric</h2><ul>
+<li><p><strong>数据来源</strong></p>
+<ul>
+<li>  MovieLens-1m</li>
+<li>  Amazon CDs&amp;Vinyl/ Movies&amp;TV/ Beauty/ Games</li>
+<li>  Steam</li>
+</ul>
+</li>
+<li><p><strong>重要指标</strong></p>
+<ul>
+<li>  Hit@10、NDCG@10</li>
+</ul>
+</li>
+</ul>
+<h2 id="Method-amp-Table"><a href="#Method-amp-Table" class="headerlink" title="Method &amp; Table"></a>Method &amp; Table</h2><ul>
+<li>模型架构</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211116223143274.png"></p>
+<ul>
+<li>参数说明</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211116223530787.png" alt="image-20211116223530787"></p>
+<p><strong>1.个性化的时间间隔（time interval）</strong></p>
+<p>规定了序列$S$的maxlen（n），长度小于n的序列用一个特殊标记的padding item来padding。时间序列$T$用第一个item的timestamps来padding（到这里还只是时间戳）。</p>
+<p>对每个用户制定个性化的时间间隔，个性化指的其实就是下面介绍的缩放操作。对用户$u$来说，时间戳序列$t=(t_1,t_2,…,t_n)$，用任意两个物品的时间戳之差表示物品之间的时间间隔，作为任意两个物品之间的关系（relation）$r_{ij}$，于是得到时间间隔集合$R^u$。规定一个缩放系数$r^u_{min}=min(R^u)$，即序列里的最小时间间隔，再对所有时间间隔缩放$r^u_{ij}=\lfloor\frac{|r_i-r_j|}{r^u_{min}}\rfloor$，得到时间间隔矩阵$M^u\in N^{n\times n}$。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211116225152019.png" alt="image-20211116225152019"></p>
+<p>另外，论文还规定了每个$r^u_{ij}$的阈值，对大于阈值的做了一个clip操作得到$M^u_{clipped}$。</p>
+<p><strong>2.Embedding层</strong></p>
+<ul>
+<li>item的表示：padding item用$\vec0$表示，其它每个item用d维向量表示，构成$M^I\in R^{|I|\times d}$的item embedding矩阵，则前n个item的表示为$E^I\in R^{n\times d}$。</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117222616679.png" alt="image-20211117222616679"></p>
+<ul>
+<li>position 的表示：即位置编码，用两个K、V矩阵$M^P_K\in R^{n\times d}$和$M^P_V\in R^{n\times d}$，表示每个位置（序列最大长度为n）的Key和Value向量，分别为$E^P_K\in R^{n\times d}$和$E^P_V\in R^{n\times d}$。</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117081419839.png" alt="image-20211117081419839"></p>
+<ul>
+<li>relative time interval的表示：和positional embedding相似，用两个K、V矩阵$E^P_K\in R^{k\times d}$和$E^P_V\in R^{k\times d}$，表示每个位置（序列最大长度为n）的Key和Value向量，其中k表示一共有k种相对时间间隔。于是clipped后的$M^u_{clipped}$，把对应的$r_{ij}$替换成对应的K、V向量，就得到了$E^R_K\in R^{n\times n\times d}$和$E^R_V\in R^{n\times n\times d}$。</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117081413089.png" alt="image-20211117081413089"></p>
+<p><strong>3.时间间隔感知的自注意力机制</strong></p>
+<p>仅有item和对应的时间戳也不能把序列确定下来，还要加入item在序列中的位置。</p>
+<ul>
+<li><strong>时间间隔感知的自注意力层Time Interval-Aware Self-attention Layer</strong></li>
+</ul>
+<p>传统的自注意力层为QKV模式，可以定义成$Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V$。用item embedding乘以$W^Q、W^K、W^V$投影到其对应的$Querry、Key、Value$空间上。</p>
+<p>这里本质上也是这么做的，但对K和V做了一点改变。</p>
+<p>作者首先将$E^I=(m_{s_1},m_{s_2},…,m_{s_n})$表示的item序列变换新序列$Z=(z_1,z_2,…,z_n)$，$z_i\in R^d$。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117222727853.png" alt="image-20211117222727853"></p>
+<p>其中$(m_{s_j}W^V+r_{ij}^v+p_j^v)$**对应QKV模式里的$Value$**，其中$m_{s_j}W^Q$是将item embedding投影到$Value$空间，不过在此基础上还加上了realation embedding（相对时间间隔）和position embedding（位置编码）的value表示。</p>
+<p>找到$Value$以后，公式就可以写成：$z_i=\sum^n_{j=1}\alpha_{ij}\ Value_j$。</p>
+<p>系数$\alpha_{ij}$是其实就是$softmax(\frac{QK^T}{\sqrt{d_k}})$部分。$softmax()$在论文中体现在$\alpha_{ij}=\frac{exp\ e_{ij}}{\sum^n_{k=1}exp\ e_{ik}}$，那么可以猜测$\frac{QK^T}{\sqrt{d_k}}$就对应论文中的$e_{ij}$了。事实正如此，$e_{ij}$被定义为：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117090739720.png" alt="image-20211117090739720"></p>
+<p>其中$m_{s_j}W^Q$是将item embedding投影到$Querry$空间，**对应QKV模式里的$Querry$**。</p>
+<p>$(m_{s_j}W^K+r^k_{ij}+p^k_j)$，**对应QKV模式里的$Key$**，其中$m_{s_j}W^K$是将item embedding投影到$Key$空间，不过在此基础上还加上了realation embedding（相对时间间隔）和position embedding（位置编码）的key表示，另外除以的$\sqrt{d}$是缩放系数。</p>
+<ul>
+<li><strong>因果关系Causality</strong></li>
+</ul>
+<p>序列本身就有因果关系，因为我们在预测第t+1个物品时，只知道前t个物品的信息。但是在做self-attention时，每个物品都能感知到所有物品（因为Q对所有K做了查询），破坏了因果关系。所以我们必须规定，在做self-attention时，规定每个$Q_i$只能查询$K_j$，其中$j&lt;i$，即每个Q只能查询在其之前（previous）的K，满足了因果关系，代码里可以用mask实现。</p>
+<ul>
+<li><strong>前馈层Point-wise Feef-Forward Network</strong></li>
+</ul>
+<p>FFN为模型加入非线性性。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117093429227.png" alt="image-20211117093429227"></p>
+<p>Residual connection和dropout正则化。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117093655881.png" alt="image-20211117093655881"></p>
+<p>Layer Norm正则化。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117093809122.png" alt="image-20211117093809122"></p>
+<p><strong>4.预测层</strong></p>
+<p>常规的点积计算每个物品的得分。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117094112160.png" alt="image-20211117094112160"></p>
+<p><strong>5.模型训练</strong></p>
+<p>取物品序列$\widetilde{S_{|S^u|}}=(S^u_1,S^u_2,…,S^u_{|S^u|})$和对应的时间序列$\widetilde{T_{|T^u|}}=(T^u_1,T^u_2,…,T^u_{|T^u|})$的前$|S^u|-1$项，即$\widetilde{S_{|S^u|-1}}=(S^=u_1,S^u_2,…,S^u_{|S^u|-1})$和$\widetilde{T_{|T^u|-1}}=(T^u_1,T^u_2,…,T^u_{|T^u-1|})$。通过裁剪和补长各自化成成相同长度n的两个序列$s=(s_1,s_2,…,s_n)$，和$t=(t_1,t_2,…,t_n)$。给定这两个序列，再规定对应的输出序列$o=(o_1,o_2,…,o_n)$，其中$o_i$定义为：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117095415283.png" alt="image-20211117095415283"></p>
+<p>简而言之，padding项的输出为&lt;pad&gt;；$s$最后一项之前的输出（预测）为下一项；$s$最后一项的输出（预测）为$S^u_{|S^u|}$，注意$S^u_{|S^u|}$不在$s$里，因为一开始就把最后一项拿出来了。</p>
+<p>loss采用进行负采样的binary cross entropy，加入了F正则项：</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117100703091.png" alt="image-20211117100703091"></p>
+<p>padding项也计算了loss，但是没有意义，所以实际计算时把padding项的loss mask掉。</p>
+<h2 id="Experiment-amp-Table"><a href="#Experiment-amp-Table" class="headerlink" title="Experiment &amp; Table"></a>Experiment &amp; Table</h2><p><strong>1.模型表现</strong></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117101056812.png" alt="image-20211117101056812"></p>
+<ul>
+<li>TiSASRec在6个数据集上达到了SOTA</li>
+</ul>
+<p><strong>2.Ablation Study</strong></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117103132511.png" alt="image-20211117103132511"></p>
+<ul>
+<li>TiSASRec-R去掉了在K和V里去掉了position embedding（绝对位置）</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117103534252.png" alt="image-20211117103534252"></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117103553274.png" alt="image-20211117103553274"></p>
+<ul>
+<li>SASRec去掉了relative time interval（relation，相对时间间隔）</li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117114708312.png" alt="image-20211117114708312"></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117114729528.png" alt="image-20211117114729528"></p>
+<ul>
+<li>结果表明保留绝对位置和相对时间间隔时model performance最好</li>
+</ul>
+<p><strong>3.超参数实验</strong></p>
+<p><strong>A.隐向量维度d</strong></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117104027269.png" alt="image-20211117104027269"></p>
+<ul>
+<li>不同模型在不同数据集（<em>除了Games和Steam，why？</em>）上选择d={10，20，30，40，50}</li>
+<li>基本上所给模型在所给数据集上都是d越大越好</li>
+<li>在Beauty数据集比较特殊，MARank、Caser、TransRec的表现随着d增大在变差</li>
+<li>所以最后选d=50</li>
+</ul>
+<p><strong>B. 序列最大长度n</strong></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117104705615.png" alt="image-20211117104705615"></p>
+<ul>
+<li>n越大效果越好，并且在这两个数据集上SASRec表现比TiSASRec差且更快收敛。</li>
+<li>所以最后选n=50</li>
+<li><em>疑问：只选了MovieLens和Amazon CD&amp;Vinyl做实验，why？SASRec论文里选MovieLens-1m做实验的时候maxlen选的可是200，且performance比TiSASRec选50时好….这篇论文maxlen选的最大才50，why？</em></li>
+</ul>
+<p><strong>C.最大时间间隔k</strong></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117105425551.png" alt="image-20211117105425551"></p>
+<ul>
+<li>k越大意味着要训练的参数越多</li>
+<li>TiSASRec整体上更稳定，TiSASRec-R当k取合适时表现最好，但当k更大时表现变差。</li>
+<li><em>疑问：ml-1m上比较稳定且permformance在提升，到最大值2048。但CD&amp;Vinyl上最好表现是k=256，但论文最后选的k=512</em></li>
+</ul>
+<p><strong>4.个性化时间间隔实验</strong></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117110513024.png" alt="image-20211117110513024"></p>
+<ul>
+<li>Method（1）直接用时间戳作为特征，Method（2）使用没缩放的时间间隔，Method（3）使用个性化（根据每个用户最小时间间隔缩放后的）的时间间隔，即论文方法。</li>
+<li>注意前两个方法没有使用时间戳裁剪 timestamps clip</li>
+<li>Method（3）的performence最好</li>
+</ul>
+<p><strong>5.可视化</strong></p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117111955529.png" alt="image-20211117111955529"></p>
+<ul>
+<li>Figure 7 表明预测时使用时间间隔产生的推荐不一样，而且好像更准确</li>
+<li>Figure 8 是不同时间间隔的权重可视化<ul>
+<li>小时间间隔的权重更大，说明更短期交互的物品对预测结果影响更大</li>
+<li>(a)MovieLens是dense数据集，(b) CDs&amp;Vinyl是sparse数据集。左边绿的区域更大，说明dense数据集上预测需要更大范围的物品。</li>
+<li>Amazon Beauty数据集没有明显的黄绿区域，说明这个数据集没有明显的序列模式，这也说明了为什么有些序列模型在该数据集上效果不是很好。</li>
+</ul>
+</li>
+</ul>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a target="_blank" rel="noopener" href="https://aclanthology.org/N18-2074/">[1]Self-Attention with Relative Position Representations</a>)</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%BA%8F%E5%88%97%E6%8E%A8%E8%8D%90/" rel="tag"># 序列推荐</a>
+              <a href="/tags/%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B/" rel="tag"># 自注意力</a>
+              <a href="/tags/TiSASRec/" rel="tag"># TiSASRec</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/11/14/Pytorch%20Geometric/" rel="prev" title="Pytorch Geometric 学习笔记">
+      <i class="fa fa-chevron-left"></i> Pytorch Geometric 学习笔记
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/11/22/TiSASRec%E4%BB%A3%E7%A0%81/" rel="next" title="TiSASRec代码笔记">
+      TiSASRec代码笔记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">2.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">3.</span> <span class="nav-text">Conclusion</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dataset-amp-Metric"><span class="nav-number">4.</span> <span class="nav-text">Dataset &amp; Metric</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Method-amp-Table"><span class="nav-number">5.</span> <span class="nav-text">Method &amp; Table</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Experiment-amp-Table"><span class="nav-number">6.</span> <span class="nav-text">Experiment &amp; Table</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">7.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

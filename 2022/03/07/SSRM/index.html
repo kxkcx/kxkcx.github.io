@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="原paper：Streaming Session-based Recommendation | Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining 源码解读：未开源  中译：流会话推荐 总结：第一篇结合了流推荐和会话推荐的论文（准备开坑）。主要解">
+<meta property="og:type" content="article">
+<meta property="og:title" content="论文笔记：《Streaming Session-based Recommendation》">
+<meta property="og:url" content="http://guadzilla.github.io/2022/03/07/SSRM/index.html">
+<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:description" content="原paper：Streaming Session-based Recommendation | Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining 源码解读：未开源  中译：流会话推荐 总结：第一篇结合了流推荐和会话推荐的论文（准备开坑）。主要解">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220307185213298.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220307191209899.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220307193225545.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308193608578.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308193302601.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308193902198.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308215603572.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308215631714.png">
+<meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308194605932.png">
+<meta property="article:published_time" content="2022-03-06T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-03-28T02:46:23.756Z">
+<meta property="article:author" content="Guadzilla">
+<meta property="article:tag" content="流会话推荐">
+<meta property="article:tag" content="SSRM">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220307185213298.png">
+
+<link rel="canonical" href="http://guadzilla.github.io/2022/03/07/SSRM/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>论文笔记：《Streaming Session-based Recommendation》 | 瓜斯拉的逆袭</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?41fc030db57d5570dd22f78997dc4a7e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/03/07/SSRM/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="瓜斯拉的逆袭">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          论文笔记：《Streaming Session-based Recommendation》
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-03-07 00:00:00" itemprop="dateCreated datePublished" datetime="2022-03-07T00:00:00+08:00">2022-03-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-28 10:46:23" itemprop="dateModified" datetime="2022-03-28T10:46:23+08:00">2022-03-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">论文笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>11 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220307185213298.png" alt="image-20220307185213298"></p>
+<hr>
+<p>原paper：<a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/3292500.3330839">Streaming Session-based Recommendation | Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining</a></p>
+<p>源码解读：未开源</p>
+<hr>
+<p>中译：流会话推荐</p>
+<p>总结：第一篇结合了流推荐和会话推荐的论文（准备开坑）。主要解决两个问题，MF attention + GRU  解决用户行为的不确定性；存储技术+主动采样策略 解决了更贴近实时场景的“高速、海量、连续的流数据”的需求。个人认为可以进一步做的地方：session encoder部分，用新模型；储存技术；采样技术。</p>
+<hr>
+<span id="more"></span>
+
+<h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><ul>
+<li><p>question作者想解决什么问题？ </p>
+<p>1）用户行为的不确定性。</p>
+<p>2）会话推荐在实际场景中会以会话流的形式出现，即连续不断的、海量的、高速的会话数据，但现有会话推荐模型都是离线模型，没有模型可以解决这个问题。</p>
+</li>
+<li><p>method作者通过什么理论/模型来解决这个问题？</p>
+<p>作者提出SSRM(Streaming Session-based Recommendation Machine)模型，其中</p>
+<p>1）为了解决用户行为的不确定性，作者利用历史交互，提出基于矩阵分解的注意力模型。</p>
+<p>2）为了解决流会话数据“海量”、“高速”的挑战，作者基于存储提出使用主动采样策略的流模型。</p>
+</li>
+<li><p>answer作者给出的答案是什么？</p>
+<p>在LastFM和Gowalla数据集上证明了SOTA。</p>
+</li>
+</ul>
+<h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>第一篇提出流会话推荐模型的论文。</p>
+<ul>
+<li><p>why作者为什么研究这个课题？    </p>
+<p>“流会话”(Streaming session)的设定更贴近实际。</p>
+</li>
+<li><p>how当前研究到了哪一阶段？</p>
+<p>第一篇提出流会话推荐模型的论文。</p>
+</li>
+<li><p>what作者基于什么样的假设（看不懂最后去查）？</p>
+<p>1）用户的历史交互信息是可获得的</p>
+<p>2）背景是流会话的设定，即会话数据海量、连续不断、迅速地迭代。</p>
+</li>
+</ul>
+<h2 id="Dataset-amp-Metric"><a href="#Dataset-amp-Metric" class="headerlink" title="Dataset &amp; Metric"></a>Dataset &amp; Metric</h2><ul>
+<li>数据来源 </li>
+</ul>
+<p>LastFM：<a target="_blank" rel="noopener" href="http://mtg.upf.edu/static/datasets/last.fm/lastfm-dataset-1K.tar.gz">http://mtg.upf.edu/static/datasets/last.fm/lastfm-dataset-1K.tar.gz</a></p>
+<p>Gowalla：<a target="_blank" rel="noopener" href="https://snap.stanford.edu/data/loc-gowalla.html">https://snap.stanford.edu/data/loc-gowalla.html</a></p>
+<ul>
+<li>数据划分</li>
+</ul>
+<p>给数据集 $D$ 中的会话按时间排序，分成前60%作为训练集，和后40%作为候选集。为了模拟线上的流数据输入，将候选集再划分成5个等长切片作为测试机。第一个测试机和10%的训练集作为验证集。实验中，若要预测第 $i$ 个测试集的序列行为，那么 $i$ 之前的测试集切片都用作在线训练。</p>
+<ul>
+<li>重要指标 </li>
+</ul>
+<p>MRR@20、Recall@20</p>
+<h2 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h2><ul>
+<li><h3 id="SSRM模型框架"><a href="#SSRM模型框架" class="headerlink" title="SSRM模型框架"></a>SSRM模型框架</h3></li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220307191209899.png" alt="image-20220307191209899"></p>
+<p>SSRM的主要工作是，建立一个基于注意力的会话推荐系统（离线模型），再将其拓展到流会话的设定。</p>
+<ul>
+<li><h3 id="离线模型：基于历史行为的注意力编码器"><a href="#离线模型：基于历史行为的注意力编码器" class="headerlink" title="离线模型：基于历史行为的注意力编码器"></a>离线模型：基于历史行为的注意力编码器</h3></li>
+</ul>
+<p>离线模型 = 建模序列 + 矩阵分解</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220307193225545.png" alt="image-20220307193225545"></p>
+<p>其中，建模“序列” = 基础会话编码器 + 基于矩阵分解的注意力会话编码器。这两部分如下1.2.：</p>
+<ol>
+<li><strong>基础会话编码器(Basic Session Encoder)</strong></li>
+</ol>
+<p>主要为了建模当前会话的表示。采用基本的GRU模型（重置门、更新门、候选状态），将最后一个隐藏状态作为当前会话 $i$ 的基本表示： $c_i = h_t$ 。</p>
+<ol start="2">
+<li><strong>基于矩阵分解的注意力会话编码器(MF-based Attentive Session Encoder)</strong></li>
+</ol>
+<p>MF分解得到每个用户的隐含表示 $p_u \in \R ^ {1 \times D} $ 和每个物品的隐含表示 $q_t \in \R ^ {1 \times D} $ 。MF既用来单独作为一个模块，还通过引入MF（利用了历史交互信息）来加强上面的基础模型。</p>
+<p>$p_u $ 和 $q_t$ 的内积  $\hat y_{u,t}^R = &lt;p_u,q_t&gt;=p_u \cdot q_t$ 用来表示用户 $u$ 有多“喜欢”物品 $i$ 。这里的 $q_t$ 和上面的 $h_t$ 是物品 $t$ 的两种表示，作用、含义不同： $h_t$ ，即GRU在物品 $t$ 处的隐含表示，是总结了序列行为(1,2,…,t)的物品表示；而 $q_t$ 作为实际的物品表示，可用于和用户隐含表示做内积，表明用户是否喜欢这个物品。</p>
+<p>为了降低随机性、捕捉用户 $u$ 的主要意图，这里使用了注意力机制编码会话表示 $c_i$：<br>$$<br>c_i = [\ \sum^t_{j=1}\alpha_{u,j}\cdot h_j \ ; h_t \ ]<br>$$<br>其中权重 $\alpha_u = softmax(\hat y_u^R)$ ，即对用户 $u$ 对序列中物品的“喜欢”程度的打分进行softmax，得到和为1的权重。求到加权的表示后，再与GRU得到的会话表示 $h_t$ 拼接，作为最终的会话表示（这里 $h_t$ 用到了两次，一次作为最后一个物品表示，一次作为会话表示）。</p>
+<ol start="3">
+<li><strong>混合注意力推荐系统</strong></li>
+</ol>
+<p>SSRM再进一步将注意力编码器的输出和MF的输出结合，使得模型不仅考虑当前会话的序列行为，还考虑了用户的长期兴趣和共现行为。</p>
+<p>会话编码器最后输出，每个会话对每个物品的打分： $\hat y_{i,t}^S = q_t B c_i^T $  ，表示第 $i$ 个会话对物品 $t$ 的i打分，其中 $q_t \in \R ^ {1 \times D} $ ， $c_i \in \R ^ {1 \times H} $ ，变换矩阵 $B \in \R ^ {D \times H} $ 。</p>
+<p>由MF得到的 $p_u$ 和 $q_t$  的内积  $\hat y_{u,t}^R =p_u \cdot q_t$ 。</p>
+<p>两者使用一个可调参数 $w$ 加权求和  $\hat y_{i,t} = w \hat y_{i,t}^R + (1-w)\hat y_{i,t}^S $ 。</p>
+<p>最后，把物品排序任务当作分类任务，使用CE loss损失函数训练模型。 $r_u$ 是物品的真实标签分布， $\hat y_u$ 是预测的概率分布。<br>$$<br>L(r_u,\hat y_u) = - \sum^n_{i=1} r_{u,i} \cdot log(\hat y_{u,i})<br>$$</p>
+<ul>
+<li><h3 id="在线训练：基于存储的、使用主动采样策略的流模型"><a href="#在线训练：基于存储的、使用主动采样策略的流模型" class="headerlink" title="在线训练：基于存储的、使用主动采样策略的流模型"></a>在线训练：基于存储的、使用主动采样策略的流模型</h3></li>
+</ul>
+<p>建立完基于注意力的会话推荐系统（离线模型）后，再将其拓展到流会话的设定。建立存储的目的是准确地概括总结历史行为。</p>
+<p><strong>1.传统模型的更新方法</strong></p>
+<p>随机采样技术。令 $C$ 为保存会话序列的存储库，令 $t$ 为下一个时刻即将到达的数据实例。当 $t&gt;|C|$ 时，存储库会以 $\frac{|C|}{t} $ 的概率存储这个数据实例，同时随机替换掉存储库 $C$ 里的数据实例。这样得到的存储库可以证明相当于当前数据集的随机采样结果，同时也证明可以保留模型的长期记忆[1]。但是 $\frac{|C|}{t} $ 是随时间递减的，这样模型就会倾向于忽略最近的数据，因为越近的数据被选入存储库的概率越低。而实际场景中是存在用户兴趣漂移的现象的，换句话说，使用这种随机采样技术难以实现“捕捉最新产生的数据中的行为模式”。</p>
+<p><strong>2.主动采样策略</strong></p>
+<p>虽然更新时同时使用整个存储库和所有新到达数据能产生更好结果，但是由于高速的流数据和有限的计算资源，这种方式通常会导致可利用的数据非常少（这个问题也被称为系统过载）。所以需要一个明智的样本选择策略。</p>
+<p>本文提出的主动采样策略的思想和一些主动学习（Active learning）类似，即“选择对系统贡献最大的样本的最小集合”，供用户评估。具体来说，为了使模型在有限时间窗口内尽可能地多学习，采样策略每次应该选择 $C^{new}\cup C$ 中<strong>信息量最大</strong>的会话实例。</p>
+<p>计算会话的信息量，使用会话中每个物品得分的均值，其中物品得分 $r_{u,k}$ 表示用户 $u$ 在当前模型下对物品 $k$ 的预测能力，使用用户隐含表示和物品隐含表示做内积得到 $r_{u,k}=p_u q_k$。$r_{u,k}$ 值越小， $r_{s_i}$ 值越小，说明模型越难以预测该会话中的物品，说明该会话信息量越大，越能修正模型，越该对它进行采样。<br>$$<br>r_{s_i}=\frac{\sum^t_{k=1}r_{u,k}}{t}<br>$$<br>以 $r_{s_i}$ 值对这些会话降序排列，再根据排名计算每个会话的权重因子 $w_{s_i}$，最后得到每个会话的采样概率 $p(s_i)$ ：<br>$$<br>w_{s_i}=exp(\frac{rank_{s_i}}{C\cup C^{new}})<br>;\<br>p(s_i)=\frac{w_{s_i}}{\sum_{s_i \in C \cup C^{new}}w_{s_i}}<br>$$<br>其中，信息量越大的会话排名越靠后，权重因子越高，采样概率也越大。</p>
+<h2 id="Experiment-amp-Table"><a href="#Experiment-amp-Table" class="headerlink" title="Experiment &amp; Table"></a>Experiment &amp; Table</h2><ul>
+<li><h3 id="算法描述"><a href="#算法描述" class="headerlink" title="算法描述"></a>算法描述</h3></li>
+</ul>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308193608578.png" alt="image-20220308193608578"></p>
+<ul>
+<li><h3 id="和SBR的经典方法比较"><a href="#和SBR的经典方法比较" class="headerlink" title="和SBR的经典方法比较"></a>和SBR的经典方法比较</h3></li>
+</ul>
+<p>SOTA。LastFM的提升率比Gowalla高的主要原因是，Gowalla更系数，每个用户的点击很少，并且会话数据只有寥寥几个，从而导致训练不充分。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308193302601.png" alt="image-20220308193302601"></p>
+<ul>
+<li><h3 id="验证矩阵分解注意力机制的有效性（MF-Attention）"><a href="#验证矩阵分解注意力机制的有效性（MF-Attention）" class="headerlink" title="验证矩阵分解注意力机制的有效性（MF-Attention）"></a>验证矩阵分解注意力机制的有效性（MF-Attention）</h3></li>
+</ul>
+<p>Baseline：只有基础会话编码器（Basic session encoder），好像就是GRU4Rec。三个模型采用相同的streaming技术，以消除线上更新方法带来的影响。SSRM效果最好。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308193902198.png" alt="image-20220308193902198"></p>
+<ul>
+<li><h3 id="不同流策略的影响"><a href="#不同流策略的影响" class="headerlink" title="不同流策略的影响"></a>不同流策略的影响</h3></li>
+</ul>
+<p>S1：没有存储库，且仅用新来的数据更新模型。S2：有存储库，采用从 $C$ 中随机采样训练的传统方法。S3：S2的基础上，从 $C\cup C^{new}$ 中采样。S1、S3优于S2，说明相比于历史long-term memory，模型更能从用户最近行为中受益。而SSRM模型优于其它所有，说明本文提出的主动采样策略是有效的。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308215603572.png" alt="image-20220308215603572"></p>
+<ul>
+<li><h3 id="不同过载设定的影响"><a href="#不同过载设定的影响" class="headerlink" title="不同过载设定的影响"></a>不同过载设定的影响</h3></li>
+</ul>
+<p>$W$ ：固定时间窗口，即一次能从 $C\cup C^{new}$ 中采样的样本数。 $W$ 越小说明工作负载越重，只训练到有限的序列。横轴看，窗口越大，过载越轻，模型表现越好；反之窗口越大，过载越重，模型表现越差。纵向看不同测试集，因为这些测试集是按时间顺序分的，越往后新用户、新物品越多。但是可以发现，从test2到test5，它们之间的gap越来越小。SSRM能够快速减小这种gap，证明其处理新数据的能力。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308215631714.png" alt="image-20220308215631714"></p>
+<ul>
+<li><h3 id="存储库大小的影响"><a href="#存储库大小的影响" class="headerlink" title="存储库大小的影响"></a>存储库大小的影响</h3></li>
+</ul>
+<p> $|C|$ 的大小决定了保留多少历史信息，它保留的观测行为越多，就越可能从历史行为中采样，就会有更多的样本距离current behavior越久远，故模型就会用更少的当前会话信息来更新。换句话说，对于过去没有出现的用户和项目，模型会学习得更少，这将导致性能相对较差。Figure 6 里也能得出这个结论，最近的行为更重要。但是因为存在long-memory problem，如果只用当前session来训练模型的话，结果会变低，总的来说，历史行为和当前行为两者得结合起来。</p>
+<p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220308194605932.png" alt="image-20220308194605932"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>[1]Ernesto Diaz-Aviles, Lucas Drumond, Lars Schmidt-Thieme, and Wolfgang Nejdl. 2012. Real-time top-n recommendation in social streams. RecSys (2012)</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B5%81%E4%BC%9A%E8%AF%9D%E6%8E%A8%E8%8D%90/" rel="tag"># 流会话推荐</a>
+              <a href="/tags/SSRM/" rel="tag"># SSRM</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/05/Recbole%E9%81%BF%E5%9D%91%E6%89%8B%E5%86%8C/" rel="prev" title="Recbole避坑手册">
+      <i class="fa fa-chevron-left"></i> Recbole避坑手册
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/03/13/GAG/" rel="next" title="论文笔记：《GAG：Global Attributed Graph Neural Network for Streaming Session-based Recommendation》">
+      论文笔记：《GAG：Global Attributed Graph Neural Network for Streaming Session-based Recommendation》 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NDcyNC8zMTE5NQ=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">2.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dataset-amp-Metric"><span class="nav-number">3.</span> <span class="nav-text">Dataset &amp; Metric</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Method"><span class="nav-number">4.</span> <span class="nav-text">Method</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SSRM%E6%A8%A1%E5%9E%8B%E6%A1%86%E6%9E%B6"><span class="nav-number">4.1.</span> <span class="nav-text">SSRM模型框架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A6%BB%E7%BA%BF%E6%A8%A1%E5%9E%8B%EF%BC%9A%E5%9F%BA%E4%BA%8E%E5%8E%86%E5%8F%B2%E8%A1%8C%E4%B8%BA%E7%9A%84%E6%B3%A8%E6%84%8F%E5%8A%9B%E7%BC%96%E7%A0%81%E5%99%A8"><span class="nav-number">4.2.</span> <span class="nav-text">离线模型：基于历史行为的注意力编码器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E7%BA%BF%E8%AE%AD%E7%BB%83%EF%BC%9A%E5%9F%BA%E4%BA%8E%E5%AD%98%E5%82%A8%E7%9A%84%E3%80%81%E4%BD%BF%E7%94%A8%E4%B8%BB%E5%8A%A8%E9%87%87%E6%A0%B7%E7%AD%96%E7%95%A5%E7%9A%84%E6%B5%81%E6%A8%A1%E5%9E%8B"><span class="nav-number">4.3.</span> <span class="nav-text">在线训练：基于存储的、使用主动采样策略的流模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Experiment-amp-Table"><span class="nav-number">5.</span> <span class="nav-text">Experiment &amp; Table</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E6%8F%8F%E8%BF%B0"><span class="nav-number">5.1.</span> <span class="nav-text">算法描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%92%8CSBR%E7%9A%84%E7%BB%8F%E5%85%B8%E6%96%B9%E6%B3%95%E6%AF%94%E8%BE%83"><span class="nav-number">5.2.</span> <span class="nav-text">和SBR的经典方法比较</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AA%8C%E8%AF%81%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6%E7%9A%84%E6%9C%89%E6%95%88%E6%80%A7%EF%BC%88MF-Attention%EF%BC%89"><span class="nav-number">5.3.</span> <span class="nav-text">验证矩阵分解注意力机制的有效性（MF-Attention）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E5%90%8C%E6%B5%81%E7%AD%96%E7%95%A5%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">5.4.</span> <span class="nav-text">不同流策略的影响</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E5%90%8C%E8%BF%87%E8%BD%BD%E8%AE%BE%E5%AE%9A%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">5.5.</span> <span class="nav-text">不同过载设定的影响</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%BA%93%E5%A4%A7%E5%B0%8F%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">5.6.</span> <span class="nav-text">存储库大小的影响</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      学习资料
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/1567748478" title="https:&#x2F;&#x2F;space.bilibili.com&#x2F;1567748478" rel="noopener" target="_blank">跟李沐学AI</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">zyh</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>
