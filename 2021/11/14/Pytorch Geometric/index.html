@@ -17,14 +17,14 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"kxkcx.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="官网永远是最好的学习资料：https:&#x2F;&#x2F;pytorch-geometric.readthedocs.io&#x2F;en&#x2F;latest&#x2F; 跟着配套colaboratory的教程走，大概一天能学完五个教程，学完也算基本入门pytroch-geometric了。  1. Introduction.ipynb - Colaboratory (google.com)  This concludes the fi">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Pytorch Geometric 学习笔记">
-<meta property="og:url" content="http://guadzilla.github.io/2021/11/14/Pytorch%20Geometric/index.html">
-<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:url" content="http://kxkcx.github.io/2021/11/14/Pytorch%20Geometric/index.html">
+<meta property="og:site_name" content="coderkou">
 <meta property="og:description" content="官网永远是最好的学习资料：https:&#x2F;&#x2F;pytorch-geometric.readthedocs.io&#x2F;en&#x2F;latest&#x2F; 跟着配套colaboratory的教程走，大概一天能学完五个教程，学完也算基本入门pytroch-geometric了。  1. Introduction.ipynb - Colaboratory (google.com)  This concludes the fi">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211118204147577.png">
@@ -35,7 +35,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211118204147577.png">
 
-<link rel="canonical" href="http://guadzilla.github.io/2021/11/14/Pytorch%20Geometric/">
+<link rel="canonical" href="http://kxkcx.github.io/2021/11/14/Pytorch%20Geometric/">
 
 
 <script id="page-configurations">
@@ -48,7 +48,7 @@
   };
 </script>
 
-  <title>Pytorch Geometric 学习笔记 | 瓜斯拉的逆袭</title>
+  <title>Pytorch Geometric 学习笔记 | coderkou</title>
   
 
 
@@ -112,7 +112,7 @@
 
     <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
-      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <h1 class="site-title">coderkou</h1>
       <span class="logo-line-after"><i></i></span>
     </a>
   </div>
@@ -204,16 +204,16 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2021/11/14/Pytorch%20Geometric/">
+    <link itemprop="mainEntityOfPage" href="http://kxkcx.github.io/2021/11/14/Pytorch%20Geometric/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/touxiang.jpg">
       <meta itemprop="name" content="Guadzilla">
-      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+      <meta itemprop="description" content="东北大学在读硕士，研究方向为：NLP/序列推荐">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="瓜斯拉的逆袭">
+      <meta itemprop="name" content="coderkou">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -471,7 +471,7 @@ pip install xxx.whl
     <img class="site-author-image" itemprop="image" alt="Guadzilla"
       src="/images/touxiang.jpg">
   <p class="site-author-name" itemprop="name">Guadzilla</p>
-  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+  <div class="site-description" itemprop="description">东北大学在读硕士，研究方向为：NLP/序列推荐</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
@@ -498,7 +498,7 @@ pip install xxx.whl
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+        <a href="https://github.com/kxkcx" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kxkcx" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>

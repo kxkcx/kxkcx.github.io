@@ -17,14 +17,14 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"kxkcx.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="原paper：GAG: Global Attributed Graph Neural Network for Streaming Session-Based Recommendation 源码解读：（近期发布）  中译：基于流会话推荐的全局属性图神经网络 总结：将SSRM的encoder部分换成了图神经网络模型，并且沿用了NARM、SRGNN等采用的注意力机制，将用户信息作为全局信息融入GNN">
 <meta property="og:type" content="article">
 <meta property="og:title" content="论文笔记：《GAG：Global Attributed Graph Neural Network for Streaming Session-based Recommendation》">
-<meta property="og:url" content="http://guadzilla.github.io/2022/03/13/GAG/index.html">
-<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:url" content="http://kxkcx.github.io/2022/03/13/GAG/index.html">
+<meta property="og:site_name" content="coderkou">
 <meta property="og:description" content="原paper：GAG: Global Attributed Graph Neural Network for Streaming Session-Based Recommendation 源码解读：（近期发布）  中译：基于流会话推荐的全局属性图神经网络 总结：将SSRM的encoder部分换成了图神经网络模型，并且沿用了NARM、SRGNN等采用的注意力机制，将用户信息作为全局信息融入GNN">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220309191028621.png">
@@ -49,7 +49,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220309191028621.png">
 
-<link rel="canonical" href="http://guadzilla.github.io/2022/03/13/GAG/">
+<link rel="canonical" href="http://kxkcx.github.io/2022/03/13/GAG/">
 
 
 <script id="page-configurations">
@@ -62,7 +62,7 @@
   };
 </script>
 
-  <title>论文笔记：《GAG：Global Attributed Graph Neural Network for Streaming Session-based Recommendation》 | 瓜斯拉的逆袭</title>
+  <title>论文笔记：《GAG：Global Attributed Graph Neural Network for Streaming Session-based Recommendation》 | coderkou</title>
   
 
 
@@ -126,7 +126,7 @@
 
     <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
-      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <h1 class="site-title">coderkou</h1>
       <span class="logo-line-after"><i></i></span>
     </a>
   </div>
@@ -218,16 +218,16 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/03/13/GAG/">
+    <link itemprop="mainEntityOfPage" href="http://kxkcx.github.io/2022/03/13/GAG/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/touxiang.jpg">
       <meta itemprop="name" content="Guadzilla">
-      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+      <meta itemprop="description" content="东北大学在读硕士，研究方向为：NLP/序列推荐">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="瓜斯拉的逆袭">
+      <meta itemprop="name" content="coderkou">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -544,7 +544,7 @@
     <img class="site-author-image" itemprop="image" alt="Guadzilla"
       src="/images/touxiang.jpg">
   <p class="site-author-name" itemprop="name">Guadzilla</p>
-  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+  <div class="site-description" itemprop="description">东北大学在读硕士，研究方向为：NLP/序列推荐</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
@@ -571,7 +571,7 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+        <a href="https://github.com/kxkcx" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kxkcx" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>

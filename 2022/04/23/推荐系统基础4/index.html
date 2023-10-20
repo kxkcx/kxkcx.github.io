@@ -17,14 +17,14 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"guadzilla.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"kxkcx.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="任务4：协同过滤进阶 编写User-CF代码，通过用户相似度得到电影推荐 编写Item-CF代码，通过物品相似度得到电影推荐 进阶：如果不使用矩阵乘法，你能使用倒排索引实现上述计算吗？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
 <meta property="og:type" content="article">
 <meta property="og:title" content="推荐系统基础4">
-<meta property="og:url" content="http://guadzilla.github.io/2022/04/23/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%804/index.html">
-<meta property="og:site_name" content="瓜斯拉的逆袭">
+<meta property="og:url" content="http://kxkcx.github.io/2022/04/23/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%804/index.html">
+<meta property="og:site_name" content="coderkou">
 <meta property="og:description" content="任务4：协同过滤进阶 编写User-CF代码，通过用户相似度得到电影推荐 编写Item-CF代码，通过物品相似度得到电影推荐 进阶：如果不使用矩阵乘法，你能使用倒排索引实现上述计算吗？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://camo.githubusercontent.com/4cf6c62c1f1e533dffdd89db9bc045b560c95444a4a6e61b7b2d49cf28703f06/687474703a2f2f72796c756f2e6f73732d636e2d6368656e6764752e616c6979756e63732e636f6d2fe59bbee78987696d6167652d32303231303632393233323534303238392e706e67">
@@ -45,7 +45,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://camo.githubusercontent.com/4cf6c62c1f1e533dffdd89db9bc045b560c95444a4a6e61b7b2d49cf28703f06/687474703a2f2f72796c756f2e6f73732d636e2d6368656e6764752e616c6979756e63732e636f6d2fe59bbee78987696d6167652d32303231303632393233323534303238392e706e67">
 
-<link rel="canonical" href="http://guadzilla.github.io/2022/04/23/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%804/">
+<link rel="canonical" href="http://kxkcx.github.io/2022/04/23/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%804/">
 
 
 <script id="page-configurations">
@@ -58,7 +58,7 @@
   };
 </script>
 
-  <title>推荐系统基础4 | 瓜斯拉的逆袭</title>
+  <title>推荐系统基础4 | coderkou</title>
   
 
 
@@ -122,7 +122,7 @@
 
     <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
-      <h1 class="site-title">瓜斯拉的逆袭</h1>
+      <h1 class="site-title">coderkou</h1>
       <span class="logo-line-after"><i></i></span>
     </a>
   </div>
@@ -214,16 +214,16 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://guadzilla.github.io/2022/04/23/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%804/">
+    <link itemprop="mainEntityOfPage" href="http://kxkcx.github.io/2022/04/23/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%804/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/touxiang.jpg">
       <meta itemprop="name" content="Guadzilla">
-      <meta itemprop="description" content="大连理工大学在读硕士，研究方向为：NLP/序列推荐">
+      <meta itemprop="description" content="东北大学在读硕士，研究方向为：NLP/序列推荐">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="瓜斯拉的逆袭">
+      <meta itemprop="name" content="coderkou">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -536,7 +536,7 @@ P_{i, j}=\bar{R}_{i}+\frac{\sum_{k=1}^{n}\left(S_{i, k}\left(R_{k, j}-\bar{R}_{k
     <img class="site-author-image" itemprop="image" alt="Guadzilla"
       src="/images/touxiang.jpg">
   <p class="site-author-name" itemprop="name">Guadzilla</p>
-  <div class="site-description" itemprop="description">大连理工大学在读硕士，研究方向为：NLP/序列推荐</div>
+  <div class="site-description" itemprop="description">东北大学在读硕士，研究方向为：NLP/序列推荐</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
@@ -563,7 +563,7 @@ P_{i, j}=\bar{R}_{i}+\frac{\sum_{k=1}^{n}\left(S_{i, k}\left(R_{k, j}-\bar{R}_{k
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/guadzilla" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;guadzilla" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+        <a href="https://github.com/kxkcx" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kxkcx" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="/374733751@qq.com" title="E-Mail → 374733751@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
