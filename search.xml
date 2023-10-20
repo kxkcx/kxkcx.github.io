@@ -1389,7 +1389,7 @@ pip install xxx.whl
 </ul>
 </li>
 </ul>
-<p>代码地址： <a href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <h2 id="推荐系统与常见的结构化问题的区别是什么？"><a href="#推荐系统与常见的结构化问题的区别是什么？" class="headerlink" title="推荐系统与常见的结构化问题的区别是什么？"></a>推荐系统与常见的结构化问题的区别是什么？</h2><p>结构化数据即表格数据（tabular data），绝大多数数据都是表格数据。</p>
 <p>推荐系统有user信息，item信息，这些数据虽然都是结构化的，但是推荐系统涉及到user和item的交互，所以不仅仅是一条结构化数据预测一个分类or一个数值那么简单，还需要从交互中抽象出用户兴趣，例如将用户交互建模为序列，这就不是结构化问题了。</p>
@@ -1455,7 +1455,7 @@ Precision = \frac{TP}{TP+FP}</script><p>ROC曲线的横坐标为假阳性率（F
 </li>
 <li>如果你来进行划分数据集为训练和验证，你会如何划分？</li>
 </ul>
-<p>代码地址： <a href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <h2 id="统计指标"><a href="#统计指标" class="headerlink" title="统计指标"></a>统计指标</h2><ul>
 <li>总共包含 6040 个用户</li>
@@ -1482,7 +1482,7 @@ Precision = \frac{TP}{TP+FP}</script><p>ROC曲线的横坐标为假阳性率（F
 <li>编写代码计算两个用户的相似度</li>
 <li>编写代码计算两个物品的相似度</li>
 </ul>
-<p>代码地址： <a href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <h2 id="协同过滤算法"><a href="#协同过滤算法" class="headerlink" title="协同过滤算法"></a>协同过滤算法</h2><p>协同过滤（Collaborative Filtering）推荐算法是最经典、最常用的推荐算法。</p>
 <p>所谓协同过滤， 基本思想是<strong>根据用户之前的喜好</strong>以及<strong>其他兴趣相近的用户的选择</strong>来给用户推荐物品(基于对用户历史行为数据的挖掘发现用户的喜好偏向， 并预测用户可能喜好的产品进行推荐)，<strong>一般是仅仅基于用户的行为数据（评价、购买、下载等）, 而不依赖于项的任何附加信息（物品自身特征）或者用户的任何附加信息（年龄， 性别等）</strong>。目前应用比较广泛的协同过滤算法是基于邻域的方法， 而这种方法主要有下面两种算法：</p>
@@ -1525,7 +1525,7 @@ sim(u,v)=\frac{\sum_{i\in I}(r_{ui}-\bar r_u)(r_{vi}-\bar r_v)}{\sqrt{\sum_{i\in
 <li>编写Item-CF代码，通过物品相似度得到电影推荐</li>
 <li>进阶：如果不使用矩阵乘法，你能使用倒排索引实现上述计算吗？</li>
 </ul>
-<p>代码地址： <a href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <h2 id="基于用户的协同过滤"><a href="#基于用户的协同过滤" class="headerlink" title="基于用户的协同过滤"></a>基于用户的协同过滤</h2><h3 id="UserCF原理介绍"><a href="#UserCF原理介绍" class="headerlink" title="UserCF原理介绍"></a>UserCF原理介绍</h3><p>基于用户的协同过滤算法(UserCF)的假设是：<strong>相似用户的兴趣也相似</strong>。所以，当一个用户A需要个性化推荐的时候， 我们可以先找到和他有相似兴趣的其他用户， 然后把那些用户喜欢的， 而用户A没有听说过的物品推荐给A。</p>
 <p><img src="https://camo.githubusercontent.com/4cf6c62c1f1e533dffdd89db9bc045b560c95444a4a6e61b7b2d49cf28703f06/687474703a2f2f72796c756f2e6f73732d636e2d6368656e6764752e616c6979756e63732e636f6d2fe59bbee78987696d6167652d32303231303632393233323534303238392e706e67" alt="image-20210629232540289"  /></p>
@@ -1687,7 +1687,7 @@ P_{i, j}=\bar{R}_{i}+\frac{\sum_{k=1}^{n}\left(S_{i, k}\left(R_{k, j}-\bar{R}_{k
 <li>编写Slope One用于电影推荐的流程</li>
 <li>比较Slope One、SVD、协同过滤的精度，哪一个模型的RMSE评分更低？</li>
 </ul>
-<p>代码地址： <a href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <h2 id="slope-one-算法"><a href="#slope-one-算法" class="headerlink" title="slope one 算法"></a>slope one 算法</h2><p>1.示例引入</p>
 <p>我们可以这么认为，商品间受欢迎的差异从某种程度上是固定的，比如所有人都喜欢海底捞火锅，但对赛百味的喜爱程度一般。此时小明对海底捞火锅的评分为4，对赛百味的评分为2；而小吴对海底捞火锅的评分为5，对赛百味的评分为3。尽管两个人评分的习惯上不同，小明平均打的分都高，但是对两个物品来说，他们之间的评分差值是不变的，即 $5-3=4-2$ 。</p>
@@ -1758,7 +1758,7 @@ P_{i, j}=\bar{R}_{i}+\frac{\sum_{k=1}^{n}\left(S_{i, k}\left(R_{k, j}-\bar{R}_{k
 <li>编写SVD用于电影推荐的流程</li>
 <li>比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？</li>
 </ul>
-<p>代码地址： <a href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <h2 id="1-隐语义模型与矩阵分解"><a href="#1-隐语义模型与矩阵分解" class="headerlink" title="1. 隐语义模型与矩阵分解"></a>1. 隐语义模型与矩阵分解</h2><p>隐语义模型（Latent factor model，简称LFM），是基于矩阵分解（Matrix Factorization，简称MF）的推荐算法。</p>
 <p>协同过滤算法的特点就是完全没有利用到物品本身或者是用户自身的属性， 仅仅利用了用户与物品的交互信息就可以实现推荐，是一个可解释性很强， 非常直观的模型， 但是也存在一些问题， 第一个就是处理稀疏矩阵的能力比较弱， 所以<strong>为了使得协同过滤更好处理稀疏矩阵问题， 增强泛化能力</strong>， 从协同过滤中衍生出矩阵分解模型或者叫隐语义模型，两者差不多说的一个意思， 就是在协同过滤共现矩阵的基础上， 使用更稠密的隐向量表示用户和物品， 挖掘用户和物品的隐含兴趣和隐含特征， 在一定程度上弥补协同过滤模型处理稀疏矩阵能力不足的问题。下图直观展现了协同过滤算法和隐语义模型（矩阵分解算法）的区别。</p>
@@ -1903,7 +1903,7 @@ p_u = p_u + \gamma (e_{ui}-\ \lambda q_i)</script><p>而对于 $p_{u}$ 和$q_{i}
 <li>将用户历史观看电影转为列表数据（一个用户一个列表）</li>
 <li>使用gensim训练word2vec，然后对用户完成聚类</li>
 </ul>
-<p>代码地址： <a href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <h1 id="学习资料"><a href="#学习资料" class="headerlink" title="学习资料"></a>学习资料</h1><p>来源 | Analytics Vidhya 【磐创AI导读】：这篇文章主要介绍了如何使用word2vec构建推荐系统。想要获取更多的机器学习、深度学习资源，欢迎大家点击上方蓝字关注我们的公众号：磐创AI。</p>
 <h2 id="概览"><a href="#概览" class="headerlink" title="概览"></a><strong>概览</strong></h2><ul>
@@ -2056,7 +2056,7 @@ p_u = p_u + \gamma (e_{ui}-\ \lambda q_i)</script><p>而对于 $p_{u}$ 和$q_{i}
 <li>基于任务7的基础上，使用编码后的用户向量，计算用户相似度。</li>
 <li>参考User-CF的过程，通过用户相似度得到电影推荐</li>
 </ul>
-<p>代码地址： <a href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <p>任务 7 中，我们在 Movielens-1m 数据集上用 word2vec 训练得到了 电影的”词向量”（物品向量、item embedding，都是一个意思，下面都用 item embedding），再对用户所有看过的电影的 embedding 取均值作为”句向量“（用户向量，user embedding）。</p>
 <p>在任务 7 的 word2vec_rec.py 里，实现了在 Movielens 数据集上用 Word2Vec 对用户进行推荐，主要步骤为：<strong>划分数据集、训练word2vec模型、计算用户向量</strong>、TopN推荐（计算相似物品）。</p>
@@ -2095,7 +2095,7 @@ p_u = p_u + \gamma (e_{ui}-\ \lambda q_i)</script><p>而对于 $p_{u}$ 和$q_{i}
 <li>可以考虑对每个召回模型的物品打分进行相加，也可以加权求和。</li>
 <li>分别计算每个模型 &amp; 多路召回模型的Top10、Top20、Top50的命中率。</li>
 </ul>
-<p>代码地址： <a href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <p>根据前面完成的任务，5个召回模型分别是 ItemCF、UserCF、MF、SlopeOne、Word2Vec。</p>
 <p><strong>任务目标</strong>：对用户是否评分做出预测，即评分只有0和1（数据集中用户评分过的电影评分都取1，未评分过的电影评分都取0），进行推荐 TopN 推荐。</p>

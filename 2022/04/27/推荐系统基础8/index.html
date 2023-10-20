@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"kxkcx.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="任务8：向量召回基础 基于任务7的基础上，使用编码后的用户向量，计算用户相似度。 参考User-CF的过程，通过用户相似度得到电影推荐  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+  <meta name="description" content="任务8：向量召回基础 基于任务7的基础上，使用编码后的用户向量，计算用户相似度。 参考User-CF的过程，通过用户相似度得到电影推荐  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;recommendation">
 <meta property="og:type" content="article">
 <meta property="og:title" content="推荐系统基础8">
 <meta property="og:url" content="http://kxkcx.github.io/2022/04/27/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%808/index.html">
 <meta property="og:site_name" content="coderkou">
-<meta property="og:description" content="任务8：向量召回基础 基于任务7的基础上，使用编码后的用户向量，计算用户相似度。 参考User-CF的过程，通过用户相似度得到电影推荐  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:description" content="任务8：向量召回基础 基于任务7的基础上，使用编码后的用户向量，计算用户相似度。 参考User-CF的过程，通过用户相似度得到电影推荐  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;recommendation">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-04-27T15:03:02.000Z">
 <meta property="article:modified_time" content="2022-04-29T04:23:17.000Z">
@@ -281,7 +281,7 @@
 <li>基于任务7的基础上，使用编码后的用户向量，计算用户相似度。</li>
 <li>参考User-CF的过程，通过用户相似度得到电影推荐</li>
 </ul>
-<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <p>任务 7 中，我们在 Movielens-1m 数据集上用 word2vec 训练得到了 电影的”词向量”（物品向量、item embedding，都是一个意思，下面都用 item embedding），再对用户所有看过的电影的 embedding 取均值作为”句向量“（用户向量，user embedding）。</p>
 <p>在任务 7 的 word2vec_rec.py 里，实现了在 Movielens 数据集上用 Word2Vec 对用户进行推荐，主要步骤为：<strong>划分数据集、训练word2vec模型、计算用户向量</strong>、TopN推荐（计算相似物品）。</p>

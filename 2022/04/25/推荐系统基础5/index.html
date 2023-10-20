@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"kxkcx.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+  <meta name="description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;recommendation">
 <meta property="og:type" content="article">
 <meta property="og:title" content="推荐系统基础5">
 <meta property="og:url" content="http://kxkcx.github.io/2022/04/25/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%805/index.html">
 <meta property="og:site_name" content="coderkou">
-<meta property="og:description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;recommendation">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220425130039276.png">
 <meta property="og:image" content="https://camo.githubusercontent.com/bc712ed4c34be52a07689afee52c5024248c7cc330484e6d305de2ac799dbe3c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f323032303038323232323032353936382e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572">
@@ -292,7 +292,7 @@
 <li>编写SVD用于电影推荐的流程</li>
 <li>比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？</li>
 </ul>
-<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <h2 id="1-隐语义模型与矩阵分解"><a href="#1-隐语义模型与矩阵分解" class="headerlink" title="1. 隐语义模型与矩阵分解"></a>1. 隐语义模型与矩阵分解</h2><p>隐语义模型（Latent factor model，简称LFM），是基于矩阵分解（Matrix Factorization，简称MF）的推荐算法。</p>
 <p>协同过滤算法的特点就是完全没有利用到物品本身或者是用户自身的属性， 仅仅利用了用户与物品的交互信息就可以实现推荐，是一个可解释性很强， 非常直观的模型， 但是也存在一些问题， 第一个就是处理稀疏矩阵的能力比较弱， 所以<strong>为了使得协同过滤更好处理稀疏矩阵问题， 增强泛化能力</strong>， 从协同过滤中衍生出矩阵分解模型或者叫隐语义模型，两者差不多说的一个意思， 就是在协同过滤共现矩阵的基础上， 使用更稠密的隐向量表示用户和物品， 挖掘用户和物品的隐含兴趣和隐含特征， 在一定程度上弥补协同过滤模型处理稀疏矩阵能力不足的问题。下图直观展现了协同过滤算法和隐语义模型（矩阵分解算法）的区别。</p>

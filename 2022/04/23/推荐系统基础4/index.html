@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"kxkcx.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="任务4：协同过滤进阶 编写User-CF代码，通过用户相似度得到电影推荐 编写Item-CF代码，通过物品相似度得到电影推荐 进阶：如果不使用矩阵乘法，你能使用倒排索引实现上述计算吗？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+  <meta name="description" content="任务4：协同过滤进阶 编写User-CF代码，通过用户相似度得到电影推荐 编写Item-CF代码，通过物品相似度得到电影推荐 进阶：如果不使用矩阵乘法，你能使用倒排索引实现上述计算吗？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;recommendation">
 <meta property="og:type" content="article">
 <meta property="og:title" content="推荐系统基础4">
 <meta property="og:url" content="http://kxkcx.github.io/2022/04/23/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%804/index.html">
 <meta property="og:site_name" content="coderkou">
-<meta property="og:description" content="任务4：协同过滤进阶 编写User-CF代码，通过用户相似度得到电影推荐 编写Item-CF代码，通过物品相似度得到电影推荐 进阶：如果不使用矩阵乘法，你能使用倒排索引实现上述计算吗？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Basics-of-Recsys">
+<meta property="og:description" content="任务4：协同过滤进阶 编写User-CF代码，通过用户相似度得到电影推荐 编写Item-CF代码，通过物品相似度得到电影推荐 进阶：如果不使用矩阵乘法，你能使用倒排索引实现上述计算吗？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;recommendation">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://camo.githubusercontent.com/4cf6c62c1f1e533dffdd89db9bc045b560c95444a4a6e61b7b2d49cf28703f06/687474703a2f2f72796c756f2e6f73732d636e2d6368656e6764752e616c6979756e63732e636f6d2fe59bbee78987696d6167652d32303231303632393233323534303238392e706e67">
 <meta property="og:image" content="https://camo.githubusercontent.com/38b1abf510c90bc3a8850a09ba19e39ea11b1f83b916f0432cc29fdaed665e5c/687474703a2f2f72796c756f2e6f73732d636e2d6368656e6764752e616c6979756e63732e636f6d2f254535253942254245254537253839253837696d6167652d32303231303632393233323632323735382e706e67">
@@ -294,7 +294,7 @@
 <li>编写Item-CF代码，通过物品相似度得到电影推荐</li>
 <li>进阶：如果不使用矩阵乘法，你能使用倒排索引实现上述计算吗？</li>
 </ul>
-<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Basics-of-Recsys">https://github.com/Guadzilla/Basics-of-Recsys</a></p>
+<p>代码地址： <a target="_blank" rel="noopener" href="https://github.com/kxkcx/recommendation">https://github.com/kxkcx/recommendation</a></p>
 <span id="more"></span>
 <h2 id="基于用户的协同过滤"><a href="#基于用户的协同过滤" class="headerlink" title="基于用户的协同过滤"></a>基于用户的协同过滤</h2><h3 id="UserCF原理介绍"><a href="#UserCF原理介绍" class="headerlink" title="UserCF原理介绍"></a>UserCF原理介绍</h3><p>基于用户的协同过滤算法(UserCF)的假设是：<strong>相似用户的兴趣也相似</strong>。所以，当一个用户A需要个性化推荐的时候， 我们可以先找到和他有相似兴趣的其他用户， 然后把那些用户喜欢的， 而用户A没有听说过的物品推荐给A。</p>
 <p><img src="https://camo.githubusercontent.com/4cf6c62c1f1e533dffdd89db9bc045b560c95444a4a6e61b7b2d49cf28703f06/687474703a2f2f72796c756f2e6f73732d636e2d6368656e6764752e616c6979756e63732e636f6d2fe59bbee78987696d6167652d32303231303632393233323534303238392e706e67" alt="image-20210629232540289"  /></p>
