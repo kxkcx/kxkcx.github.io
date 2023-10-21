@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"kxkcx.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="原paper：https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.1145&#x2F;3336191.3371786 源码解读：https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Paper_notebook&#x2F;tree&#x2F;main&#x2F;TiSASRec  中译：时间间隔感知的自注意力序列推荐 总结：是SASRec工作的延续，在self-attention的基础上加了绝对位置信息和相对时间间隔信息（加在Q">
+  <meta name="description" content="原paper：https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.1145&#x2F;3336191.3371786 源码解读：https:&#x2F;&#x2F;github.com&#x2F;coderkou&#x2F;Paper_notebook&#x2F;tree&#x2F;main&#x2F;TiSASRec  中译：时间间隔感知的自注意力序列推荐 总结：是SASRec工作的延续，在self-attention的基础上加了绝对位置信息和相对时间间隔信息（加在Q">
 <meta property="og:type" content="article">
 <meta property="og:title" content="论文笔记：《Time Interval Aware Self-Attention for Sequential Recommendation》">
 <meta property="og:url" content="https://kxkcx.github.io/recommendation/2021/11/18/TiSASRec/index.html">
 <meta property="og:site_name" content="coderkou">
-<meta property="og:description" content="原paper：https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.1145&#x2F;3336191.3371786 源码解读：https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;Paper_notebook&#x2F;tree&#x2F;main&#x2F;TiSASRec  中译：时间间隔感知的自注意力序列推荐 总结：是SASRec工作的延续，在self-attention的基础上加了绝对位置信息和相对时间间隔信息（加在Q">
+<meta property="og:description" content="原paper：https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.1145&#x2F;3336191.3371786 源码解读：https:&#x2F;&#x2F;github.com&#x2F;coderkou&#x2F;Paper_notebook&#x2F;tree&#x2F;main&#x2F;TiSASRec  中译：时间间隔感知的自注意力序列推荐 总结：是SASRec工作的延续，在self-attention的基础上加了绝对位置信息和相对时间间隔信息（加在Q">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117164643993.png">
 <meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211116223143274.png">
@@ -55,7 +55,7 @@
 <meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117111955529.png">
 <meta property="article:published_time" content="2021-11-18T12:39:02.000Z">
 <meta property="article:modified_time" content="2022-03-28T02:46:47.207Z">
-<meta property="article:author" content="Guadzilla">
+<meta property="article:author" content="coderkou">
 <meta property="article:tag" content="序列推荐">
 <meta property="article:tag" content="自注意力">
 <meta property="article:tag" content="TiSASRec">
@@ -235,7 +235,7 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/touxiang.jpg">
-      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="name" content="coderkou">
       <meta itemprop="description" content="东北大学在读硕士，研究方向为：会话推荐">
     </span>
 
@@ -308,7 +308,7 @@
         <p><img src="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20211117164643993.png"></p>
 <hr>
 <p>原paper：<a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/3336191.3371786">https://dl.acm.org/doi/10.1145/3336191.3371786</a></p>
-<p>源码解读：<a target="_blank" rel="noopener" href="https://github.com/Guadzilla/Paper_notebook/tree/main/TiSASRec">https://github.com/Guadzilla/Paper_notebook/tree/main/TiSASRec</a></p>
+<p>源码解读：<a target="_blank" rel="noopener" href="https://github.com/coderkou/Paper_notebook/tree/main/TiSASRec">https://github.com/coderkou/Paper_notebook/tree/main/TiSASRec</a></p>
 <hr>
 <p>中译：时间间隔感知的自注意力序列推荐</p>
 <p>总结：是SASRec工作的延续，在self-attention的基础上加了绝对位置信息和相对时间间隔信息（加在Q和K里）取得了更好的performamce。发现Beauty数据集序列模式不明显。</p>
@@ -586,9 +586,9 @@
 
       <div class="site-overview-wrap sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+    <img class="site-author-image" itemprop="image" alt="coderkou"
       src="/images/touxiang.jpg">
-  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <p class="site-author-name" itemprop="name">coderkou</p>
   <div class="site-description" itemprop="description">东北大学在读硕士，研究方向为：会话推荐</div>
 </div>
 <div class="site-state-wrap motion-element">
@@ -658,7 +658,7 @@
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
-  <span class="author" itemprop="copyrightHolder">zyh</span>
+  <span class="author" itemprop="copyrightHolder">coderkou</span>
 </div>
 
         

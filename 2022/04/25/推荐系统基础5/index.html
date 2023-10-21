@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"kxkcx.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;recommendation">
+  <meta name="description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;coderkou&#x2F;recommendation">
 <meta property="og:type" content="article">
 <meta property="og:title" content="推荐系统基础5">
 <meta property="og:url" content="https://kxkcx.github.io/recommendation/2022/04/25/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%A1%805/index.html">
 <meta property="og:site_name" content="coderkou">
-<meta property="og:description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;Guadzilla&#x2F;recommendation">
+<meta property="og:description" content="任务5：矩阵分解SVD 阅读矩阵分解基础教程，代码实现 编写SVD用于电影推荐的流程 比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？  代码地址： https:&#x2F;&#x2F;github.com&#x2F;coderkou&#x2F;recommendation">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220425130039276.png">
 <meta property="og:image" content="https://camo.githubusercontent.com/bc712ed4c34be52a07689afee52c5024248c7cc330484e6d305de2ac799dbe3c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f323032303038323232323032353936382e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c336431656d6876626d6478615746755a773d3d2c73697a655f312c636f6c6f725f4646464646462c745f3730237069635f63656e746572">
@@ -38,7 +38,7 @@
 <meta property="og:image" content="https://camo.githubusercontent.com/68d8995d1a9bacf4e58fa39359de71cbb99e3bf5abc5174bd1033e8b93fdae81/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303230303832373135303233373932312e706e67237069635f63656e746572">
 <meta property="article:published_time" content="2022-04-25T13:03:02.000Z">
 <meta property="article:modified_time" content="2022-04-29T04:23:00.000Z">
-<meta property="article:author" content="Guadzilla">
+<meta property="article:author" content="coderkou">
 <meta property="article:tag" content="推荐系统基础">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220425130039276.png">
@@ -216,7 +216,7 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/touxiang.jpg">
-      <meta itemprop="name" content="Guadzilla">
+      <meta itemprop="name" content="coderkou">
       <meta itemprop="description" content="东北大学在读硕士，研究方向为：会话推荐">
     </span>
 
@@ -393,7 +393,7 @@ p_u = p_u + \gamma (e_{ui}-\ \lambda q_i)</script><p>而对于 $p_{u}$ 和$q_{i}
 <p>下面我建立一个字典来存放数据， 之所以用字典， 是因为很多时候矩阵非常的稀疏， 如果用pandas的话， 会出现很多Nan的值， 反而不好处理。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义数据集， 也就是那个表格， 注意这里我们采用字典存放数据， 因为实际情况中数据是非常稀疏的， 很少有情况是现在这样</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loadData</span>():</span></span><br><span class="line">    rating_data=&#123;<span class="number">1</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">4</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">4</span>&#125;,</span><br><span class="line">           <span class="number">2</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">3</span>&#125;,</span><br><span class="line">           <span class="number">3</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">4</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">4</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">5</span>&#125;,</span><br><span class="line">           <span class="number">4</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">3</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">4</span>&#125;,</span><br><span class="line">           <span class="number">5</span>: &#123;<span class="string">&#x27;A&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;C&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;D&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;E&#x27;</span>: <span class="number">1</span>&#125;</span><br><span class="line">          &#125;</span><br><span class="line">    <span class="keyword">return</span> rating_data</span><br><span class="line"> </span><br><span class="line"><span class="comment"># 接下来就是训练和预测</span></span><br><span class="line">rating_data = loadData()</span><br><span class="line">basicsvd = SVD(rating_data, F=<span class="number">10</span>)</span><br><span class="line">basicsvd.train()</span><br><span class="line"><span class="keyword">for</span> item <span class="keyword">in</span> [<span class="string">&#x27;E&#x27;</span>]:</span><br><span class="line">    <span class="built_in">print</span>(item, basicsvd.predict(<span class="number">1</span>, item))</span><br><span class="line"> </span><br><span class="line"><span class="comment">## 结果：</span></span><br><span class="line">E <span class="number">3.252210242858994</span></span><br></pre></td></tr></table></figure>
 <p>通过这个方式， 得到的预测评分是3.25， 这个和隐向量的维度， 训练次数和训练方式有关， 这里只说一下这个东西应该怎么用， 具体结果可以不用纠结。</p>
-<p><a target="_blank" rel="noopener" href="https://github.com/Guadzilla/recpre/tree/master/task5">pytorch的代码实现</a>已给出。</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/coderkou/recpre/tree/master/task5">pytorch的代码实现</a>已给出。</p>
 <h2 id="比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？"><a href="#比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？" class="headerlink" title="比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？"></a>比较SVD与协同过滤的精度，哪一个模型的RMSE评分更低？</h2><p>$RMSE=\sqrt{\frac{1}{m}\sum^m_{i=1}(f(x_i)-y_i)^2}$</p>
 <p>用基于皮尔逊相似度的 ItemCF 协同过滤算法，推荐的 TopN 物品的评分与对应真实评分计算 RMSE 。</p>
 <p>SVD 算法可以计算所有用户对所有物品的评分，所以计算所有验证集的预测得分与对应真实评分计算 RMSE。</p>
@@ -514,9 +514,9 @@ p_u = p_u + \gamma (e_{ui}-\ \lambda q_i)</script><p>而对于 $p_{u}$ 和$q_{i}
 
       <div class="site-overview-wrap sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="Guadzilla"
+    <img class="site-author-image" itemprop="image" alt="coderkou"
       src="/images/touxiang.jpg">
-  <p class="site-author-name" itemprop="name">Guadzilla</p>
+  <p class="site-author-name" itemprop="name">coderkou</p>
   <div class="site-description" itemprop="description">东北大学在读硕士，研究方向为：会话推荐</div>
 </div>
 <div class="site-state-wrap motion-element">
@@ -586,7 +586,7 @@ p_u = p_u + \gamma (e_{ui}-\ \lambda q_i)</script><p>而对于 $p_{u}$ 和$q_{i}
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
-  <span class="author" itemprop="copyrightHolder">zyh</span>
+  <span class="author" itemprop="copyrightHolder">coderkou</span>
 </div>
 
         
