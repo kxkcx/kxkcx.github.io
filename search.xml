@@ -976,7 +976,7 @@ pip install xxx.whl
     <url>/2021/11/06/SASRec%E4%BB%A3%E7%A0%81/</url>
     <content><![CDATA[<hr>
 <p>完整的代码注释：<a href="https://github.com/Guadzilla/Paper_notebook/tree/main/SASRec">https://github.com/Guadzilla/Paper_notebook/tree/main/SASRec</a></p>
-<p>论文笔记：<a href="https://kxkcx.github.io/recommendation/recommendation/recommendation/recommendation/2021/11/03/SASRec/">https://kxkcx.github.io/recommendation/recommendation/recommendation/recommendation/2021/11/03/SASRec/</a></p>
+<p>论文笔记：<a href="https://kxkcx.github.io/recommendation/recommendation/recommendation/2021/11/03/SASRec/">https://kxkcx.github.io/recommendation/recommendation/recommendation/2021/11/03/SASRec/</a></p>
 <hr>
 <h2 id="collections-defaultdict-list"><a href="#collections-defaultdict-list" class="headerlink" title="collections.defaultdict(list)"></a>collections.defaultdict(list)</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">collections</span>.<span class="title">defaultdict</span>(<span class="params">default_factory=<span class="literal">None</span>, /[, ...]</span>)</span></span><br></pre></td></tr></table></figure>
 
@@ -1252,7 +1252,7 @@ pip install xxx.whl
     <url>/2021/11/22/TiSASRec%E4%BB%A3%E7%A0%81/</url>
     <content><![CDATA[<hr>
 <p>完整的代码注释：<a href="https://github.com/Guadzilla/Paper_notebook/tree/main/TiSASRec">https://github.com/Guadzilla/Paper_notebook/tree/main/TiSASRec</a></p>
-<p>论文笔记：<a href="https://kxkcx.github.io/recommendation/recommendation/recommendation/recommendation/2021/11/18/TiSASRec/">https://kxkcx.github.io/recommendation/recommendation/recommendation/recommendation/2021/11/18/TiSASRec/</a></p>
+<p>论文笔记：<a href="https://kxkcx.github.io/recommendation/recommendation/recommendation/2021/11/18/TiSASRec/">https://kxkcx.github.io/recommendation/recommendation/recommendation/2021/11/18/TiSASRec/</a></p>
 <hr>
 <h2 id="squeeze-unsqueeze-repeat-expand"><a href="#squeeze-unsqueeze-repeat-expand" class="headerlink" title="squeeze, unsqueeze, repeat ,expand"></a>squeeze, unsqueeze, repeat ,expand</h2><p><strong>torch.squeeze(input,dim,*,out) —&gt;Tensor</strong></p>
 <blockquote>

@@ -23,7 +23,7 @@
   <meta name="description" content="什么是数据卷数据不应该放在容器中，如果容器删除，数据就会丢失！&#x3D;&#x3D;需求：数据 持久化&#x3D;&#x3D; MYSQL，容器删了&#x3D;删库跑路！&#x3D;&#x3D;需求：MYSQL数据可以存储在本地&#x3D;&#x3D; &#x3D;&#x3D;&gt; 需要容器之间有一个数据共享的技术！Docker容器中产生的数据，同步到本地！ 这就是卷技术！说白了就是目录的挂载，将容器内的目录，挂载到 Linux 上   总结：容器的持久化和同步操作！ 容器间也可以数据共享！ 使">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Docker容器数据卷">
-<meta property="og:url" content="https://kxkcx.github.io/recommendation/recommendation/2022/04/05/Docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7/index.html">
+<meta property="og:url" content="https://kxkcx.github.io/recommendation/2022/04/05/Docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7/index.html">
 <meta property="og:site_name" content="coderkou">
 <meta property="og:description" content="什么是数据卷数据不应该放在容器中，如果容器删除，数据就会丢失！&#x3D;&#x3D;需求：数据 持久化&#x3D;&#x3D; MYSQL，容器删了&#x3D;删库跑路！&#x3D;&#x3D;需求：MYSQL数据可以存储在本地&#x3D;&#x3D; &#x3D;&#x3D;&gt; 需要容器之间有一个数据共享的技术！Docker容器中产生的数据，同步到本地！ 这就是卷技术！说白了就是目录的挂载，将容器内的目录，挂载到 Linux 上   总结：容器的持久化和同步操作！ 容器间也可以数据共享！ 使">
 <meta property="og:locale" content="zh_CN">
@@ -53,7 +53,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://wjm-images.oss-cn-beijing.aliyuncs.com/img-hosting/image-20220405151429046.png">
 
-<link rel="canonical" href="https://kxkcx.github.io/recommendation/recommendation/2022/04/05/Docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7/">
+<link rel="canonical" href="https://kxkcx.github.io/recommendation/2022/04/05/Docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7/">
 
 
 <script id="page-configurations">
@@ -222,7 +222,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://kxkcx.github.io/recommendation/recommendation/2022/04/05/Docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7/">
+    <link itemprop="mainEntityOfPage" href="https://kxkcx.github.io/recommendation/2022/04/05/Docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/touxiang.jpg">
