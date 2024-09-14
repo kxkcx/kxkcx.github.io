@@ -4,15 +4,121 @@
   <meta charset="utf-8">
   
   
-  <title>Hexo</title>
+  <title>&#39;gradle&#39; | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://example.com/index.html">
+  <meta name="description" content="​ 一、 Gradle和Groovy的引入1.1 本课程适合的人群从事Android相关的开发人员 从事Java相关的开发人员 有项目构建基础的人群 1.2 为什么要学习Gradle 一款最新的，功能最强大的构建工具，用它逼格更高  使用Groovy或Kotlin代替XML，使用程序代替传统的XML配置，项目构建更灵活  丰富的第三方插件，让你随心所欲使用  完善Android,Java开发技术体">
+<meta property="og:type" content="article">
+<meta property="og:title" content="&#39;gradle&#39;">
+<meta property="og:url" content="http://example.com/2024/09/14/gradle/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="​ 一、 Gradle和Groovy的引入1.1 本课程适合的人群从事Android相关的开发人员 从事Java相关的开发人员 有项目构建基础的人群 1.2 为什么要学习Gradle 一款最新的，功能最强大的构建工具，用它逼格更高  使用Groovy或Kotlin代替XML，使用程序代替传统的XML配置，项目构建更灵活  丰富的第三方插件，让你随心所欲使用  完善Android,Java开发技术体">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/15c476307ef049e59f69e7c0b96c621f.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/9cc90300ac324561bf76a30cae59596d.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/c621deb55d654151806948280639f6a0.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/96e49970aa60418bb3cec17fd495bdd0.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/f22ec27bdfe04e3788f7fe57a46b2ce7.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/082d24de53944a8cb3bb1c42a813d8ab.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/70f03c866b24453caeea3124ffadd5db.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/03e2cf1af1ca4b81bd6649d5f2368925.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/e83ef39e33644a6f831d4082884b28f2.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/f4b73296db44445f8b649eae6ae17c08.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/bae3ac3550624fee94d48b099015d01c.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/eea183cdecfb4126b25753de2f940cca.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/d7ff3e7143c24c349ea095b5e6c86d0a.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/3079269528614d10bdfc9a4d8aa4f37a.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/5dac711c38c24120acf1ee9d6947a979.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/71ba7643fcc9422586a0e7542398252e.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/4d21881e243341bd899918fdda804b49.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/913b76a3315741248554b9c40b2510ad.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/19980e46445d4c2d964084d45b22d9dd.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/82667b3d14354c1faeb69d13fd904268.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/82e68160897345749a909ccb2e52cf40.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/4572710a55c94c04b06c1403488eceb5.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/8474f6a1de25490c83affbcca9ee4023.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/4fccee5c03af4d2f8f857676e86e3af2.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/49d93fe9cb424181a339b9edb8c37708.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/e0b9062c887a4faebb8633eebd1c5b63.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/9dcf04d70fc44f338a252281cc5f60ef.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/ba81770924334ea299fcdcacbc8225ea.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/19dc3cd04fac478382d95ab663446625.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/bde87ba7dd8f4b438e8592938d48efe2.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/47df8b5089ee4e1b9f869b20b0ee9a9e.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/a0dd42261ddf4d449bfa7ba266d21cde.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/6337cbe63e6649af9184e700ef5cb402.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/a0d6ea436fa54db9812d934b8b9f2e4d.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/97fdde86d060445cb9e72c1dc22f2bec.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/544e0057af75418288d6b217a61f3ed3.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/1a60c0d220644ab1ab445472a15e41f9.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/2ad5fd49a6d24f8abdea19682267e9e5.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/2b12eea014924fd0bc73458aa71550cd.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/83566a8b6a4b4484b14d30fb27359b73.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/d0de90bc740d44deb6c0cfd874e6ce9c.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/109fbe3222cc48159b5c8d5841d55f71.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/03333e9ef3a54795885d793c5275ffb1.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/acaab2505c1c440bab273b5c9e2697f4.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/2dac108c7961480fb901302301392601.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/5873330a913f4fe39dfd45702c1df113.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/356be167bba544f599c3b29b386d5583.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/0a153099f9bb442099fea795dbaa4ad4.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/1513ed63e73b4c1b896bc5ba4639d699.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/c56509e67118448f918fd1d8cb9113e0.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/c7644dc19ad24498b4d3706076a060d7.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/437f261282234f15ac647cd2e1d4995b.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/f3ebfe57d0db43cbb779125a64556e1e.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/16fef863ba5a4de5b44d0c95e4150240.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/9d6e0ee8355244308019bf2b8d9bc990.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/e8a25dfefd944cf3b58f94749beb0eb1.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/f9b372f027c54b0684289fc81a29187d.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/40ce5422c26146bcbdb7d0b84f4b2cb5.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/3e0b7dce510644a893e4f772883d26bd.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/0cb1bdd90c9443fd85fd1449a990c4bb.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/5831972b62c24e569993cd753fbcb334.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/5764784498254a8dbdced837703289f1.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/875b1cd9c642432eb3d548caefe840e6.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/70827e091fd64e3a9d3340f6be9af8a9.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/2f732b4f34994e71b8b1ced8cc9ade48.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/9efdc1cfac514b52b5c58fbee2b7dd62.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/2f459dda9ca64a82b11a3f83061c2762.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/bdbbbea5e6be4411a21f2dd7d2c4b892.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/8eae1fa5b9ed4a0e9ed6c75a1ca0c528.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/dca29235332e4f52bab435b1c10c3ad2.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/2d629a2a31ae4f0db073dc999bde0aeb.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/bc4d9fea214e430c8b5e86e765db50c3.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/120df4dca5ae4b23804838f46d45e92b.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/73c8fd0a7a7444d983d43fcacfe380ee.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/666b8a4bbd3e47c78bb3d3e7ae999824.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/68278e91a5634a3ebb23626035a8223f.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/41d4990e62244c84a7fbe85902f26cab.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/911b96a383e84280b8de386b85487e47.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/9d1af9561aa646f0a0046a0a1171193a.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/7bae6c32d7454a08ab8d9fbfad193494.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/949bee13bd4a4b7c9f470a8e6ed09136.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/ab13f242885143879f0a18dfa400cdbe.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/1848bd76f023486f93b594440cddb7a8.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/fe987143b46c4a84adae607e2ba68369.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/799ab1372aa64d31a7b66ebb2369ef51.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/3007204d70eb45ea91519cd7e9fdb611.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/f278ee1481e048188231cc8c9d1d1efd.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/3995a733e70047f79083d9ae29e2d896.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/3a7ccda2e30944d79a04b3d90ccf7770.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/4af0a01ec6ab483ba73f4478c7d372d8.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/596fbfd50ee84b5eb41d1aef0a761249.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/3983a5c5564b407f8d6dc0da468e567c.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/0f987557c2524d8583438f4c9b4884a0.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/8db8d9b01cb448c39b3cd2e56d0c2eb2.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/cbd4d14e77664e5cad988f1d33a9d46d.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/9615b12e48514926950b432174c2e746.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/273bfa10efae445cb63e4ff4798a9432.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/ed7cc2f6e36b4cf583b303ba5dcfafc2.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/cf4ed1b7a5ef4f72a6d819b96c034866.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/20db737e79714573afc6467296730270.png">
+<meta property="og:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/92e936a923d649919f2d5760aae8b39f.png">
+<meta property="article:published_time" content="2024-09-14T07:34:10.000Z">
+<meta property="article:modified_time" content="2024-09-14T07:42:59.673Z">
 <meta property="article:author" content="John Doe">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/728/1641366521000/15c476307ef049e59f69e7c0b96c621f.png">
   
     <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
   
@@ -67,9 +173,7 @@
 </header>
 
       <div class="outer">
-        <section id="main">
-  
-    <article id="post-gradle" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+        <section id="main"><article id="post-gradle" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2024/09/14/gradle/" class="article-date">
   <time class="dt-published" datetime="2024-09-14T07:34:10.000Z" itemprop="datePublished">2024-09-14</time>
@@ -82,8 +186,8 @@
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/09/14/gradle/">&#39;gradle&#39;</a>
+    <h1 class="p-name article-title" itemprop="headline name">
+      &#39;gradle&#39;
     </h1>
   
 
@@ -728,421 +832,19 @@ return obj
     </footer>
   </div>
   
-</article>
-
-
-
+    
+<nav id="article-nav">
   
-    <article id="post-spring技术内幕" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/09/13/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/" class="article-date">
-  <time class="dt-published" datetime="2024-09-13T03:44:21.000Z" itemprop="datePublished">2024-09-13</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
   
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/09/13/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/">&#39;spring技术内幕&#39;</a>
-    </h1>
+    <a href="/2024/09/13/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">&#39;spring技术内幕&#39;</div>
+    </a>
   
+</nav>
 
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="spring的设计理念和整体架构"><a href="#spring的设计理念和整体架构" class="headerlink" title="spring的设计理念和整体架构"></a>spring的设计理念和整体架构</h1><h1 id="spring的核心实现：IOC容器"><a href="#spring的核心实现：IOC容器" class="headerlink" title="spring的核心实现：IOC容器"></a>spring的核心实现：IOC容器</h1><h2 id="依赖反转"><a href="#依赖反转" class="headerlink" title="依赖反转"></a>依赖反转</h2><p>![[image-20240913114724155.png]]</p>
-<p>控制反转：思考的是一个对象如何获取它依赖的对象的引用，这里反转指的是责任的反转，是自己new还是框架帮我们构造。</p>
-<h3 id="ioc容器干什么的？"><a href="#ioc容器干什么的？" class="headerlink" title="ioc容器干什么的？"></a>ioc容器干什么的？</h3><p>IOC实现了组件之间的解耦，开发人员来维护依赖关系比较麻烦，可以将获取资源的方向反转，让ioc去管理依赖关系，然后将依赖关系注入到组件中。具体的注入方法有接口注入、setter注入（最常见防止注入异常）、构造器注入。</p>
-<h3 id="IOC容器怎么实现的？"><a href="#IOC容器怎么实现的？" class="headerlink" title="IOC容器怎么实现的？"></a>IOC容器怎么实现的？</h3><p>BeanFactory和ApplicationContext</p>
-<p>所有的Bean由BeanFactory进行管理</p>
-<p>用户定义的Bean转成IOC容器中的数据结构这个结构就是BeanDefinition，然后通过BeanDefinitionRegistry注入到HashMap里面。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/09/13/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/" data-id="cm11uik8y00070kp4cfvxgkqg" data-title="&#39;spring技术内幕&#39;" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
   
 </article>
-
-
-
-  
-    <article id="post-学习网站" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/09/11/%E5%AD%A6%E4%B9%A0%E7%BD%91%E7%AB%99/" class="article-date">
-  <time class="dt-published" datetime="2024-09-11T13:09:26.000Z" itemprop="datePublished">2024-09-11</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/09/11/%E5%AD%A6%E4%B9%A0%E7%BD%91%E7%AB%99/">&#39;学习网站&#39;</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="spring"><a href="#spring" class="headerlink" title="spring"></a>spring</h1><p><a target="_blank" rel="noopener" href="https://liaoxuefeng.com/?src=redirect">廖雪峰的官方网站</a></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/09/11/%E5%AD%A6%E4%B9%A0%E7%BD%91%E7%AB%99/" data-id="cm11uik8y00060kp41duc1h0r" data-title="&#39;学习网站&#39;" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-sql编程思想" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/09/11/sql%E7%BC%96%E7%A8%8B%E6%80%9D%E6%83%B3/" class="article-date">
-  <time class="dt-published" datetime="2024-09-11T10:36:26.170Z" itemprop="datePublished">2024-09-11</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h1>
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/09/11/sql%E7%BC%96%E7%A8%8B%E6%80%9D%E6%83%B3/" data-id="cm11uik8v00020kp4eg1o4mnc" data-title="" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-spring-boot" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/09/07/spring-boot/" class="article-date">
-  <time class="dt-published" datetime="2024-09-07T13:10:38.000Z" itemprop="datePublished">2024-09-07</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/09/07/spring-boot/">spring-boot</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="问题1"><a href="#问题1" class="headerlink" title="问题1"></a>问题1</h1><blockquote>
-<p>使用java -jar  执行springboot的时候，显示没有“主属性清单”这句话是从哪里打印出来的呢？</p>
-</blockquote>
-<h1 id="问题2"><a href="#问题2" class="headerlink" title="问题2"></a>问题2</h1><blockquote>
-<p>idea怎么修改maven的版本</p>
-</blockquote>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/09/07/spring-boot/" data-id="cm11uik8w00040kp4642ke8hj" data-title="spring-boot" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-git实战" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/08/30/git%E5%AE%9E%E6%88%98/" class="article-date">
-  <time class="dt-published" datetime="2024-08-30T05:09:41.000Z" itemprop="datePublished">2024-08-30</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/08/30/git%E5%AE%9E%E6%88%98/">git实战</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="实战一"><a href="#实战一" class="headerlink" title="实战一"></a>实战一</h1><blockquote>
-<p>实现将本地项目上传到github上，本地项目目录，Flink-Study。</p>
-</blockquote>
-<h2 id="github网站上创建flink-study仓库"><a href="#github网站上创建flink-study仓库" class="headerlink" title="github网站上创建flink-study仓库"></a>github网站上创建flink-study仓库</h2><p>略</p>
-<h2 id="命令行工具通过win终端创建"><a href="#命令行工具通过win终端创建" class="headerlink" title="命令行工具通过win终端创建"></a>命令行工具通过win终端创建</h2><p><strong>安装 GitHub CLI</strong>：</p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://cli.github.com/">GitHub CLI 的官方网站</a> 下载和安装。</li>
-</ul>
-<p><strong>登录 GitHub CLI</strong>：</p>
-<ul>
-<li><code>gh auth login</code></li>
-</ul>
-<p><strong>创建新的仓库</strong>：</p>
-<ul>
-<li><code>gh repo create &lt;repository-name&gt; --public</code></li>
-</ul>
-<p><strong>使用 GitHub API(另一种方式)</strong></p>
-<ul>
-<li><code>curl -H &quot;Authorization: token YOUR_GITHUB_TOKEN&quot; \      -d &#39;&#123;&quot;name&quot;: &quot;YOUR_REPO_NAME&quot;, &quot;private&quot;: false&#125;&#39; \      https://api.github.com/user/repos</code></li>
-</ul>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/08/30/git%E5%AE%9E%E6%88%98/" data-id="cm11uik8p00000kp4hkfw4erw" data-title="git实战" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-搭建自己的博客" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/08/28/%E6%90%AD%E5%BB%BA%E8%87%AA%E5%B7%B1%E7%9A%84%E5%8D%9A%E5%AE%A2/" class="article-date">
-  <time class="dt-published" datetime="2024-08-28T10:40:40.000Z" itemprop="datePublished">2024-08-28</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/08/28/%E6%90%AD%E5%BB%BA%E8%87%AA%E5%B7%B1%E7%9A%84%E5%8D%9A%E5%AE%A2/">搭建自己的博客</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="搭建方案"><a href="#搭建方案" class="headerlink" title="搭建方案"></a>搭建方案</h1><ul>
-<li>本地站点搭建在：<code>Windows 11 专业版 21H2 22000.2538</code></li>
-<li>终端工具：<code>Powershell</code></li>
-<li>各种.yml文件或.ejs文件编辑器：<code>VS Code</code></li>
-</ul>
-<p>博客站点框架使用 <code>Hexo</code> 搭建，主题使用 <code>Fluid</code> ，以下是 <code>Hexo</code> 与 <code>Fluid</code> 的官方文档：</p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/docs/">Hexo</a></li>
-<li><a target="_blank" rel="noopener" href="https://hexo.fluid-dev.com/docs/start/">Fluid</a></li>
-</ul>
-<p>静态网站托管服务使用 <code>Github Pages</code> ，github的这个服务是免费的，因此很多个人博客都会使用这个服务，并且免去了各种意义上的麻烦，<del>包括穷的麻烦。</del> 以下是 <code>Github Pages</code> 的官方文档：</p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://docs.github.com/zh/pages/getting-started-with-github-pages">Github Pages</a></li>
-</ul>
-<p>写作工具使用 <code>Obsidian</code>，因为在之前就有使用Obsidian进行做笔记的习惯，比较顺手且好用，由于插件的支持以及其强大的拓展性，所以对于后面搭建的工作流有较好的适配性。<del>更好的是，这个软件除了发布和云盘等内容，都是免费的。</del> 以下是 <code>Obsidian</code> 的官方文档：</p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://publish.obsidian.md/help-zh/%E7%94%B1%E6%AD%A4%E5%BC%80%E5%A7%8B">Obsidian</a></li>
-</ul>
-<p>依附于上述三个部分的若干插件将在后面的叙述中记录。</p>
-<h1 id="3-工作流与写作过程"><a href="#3-工作流与写作过程" class="headerlink" title="3 工作流与写作过程"></a>3 工作流与写作过程</h1><h2 id="3-1-站点框架"><a href="#3-1-站点框架" class="headerlink" title="3.1 站点框架"></a>3.1 站点框架</h2><h3 id="3-1-1-Hexo"><a href="#3-1-1-Hexo" class="headerlink" title="3.1.1 Hexo"></a>3.1.1 Hexo</h3><p>对于对前端不熟的我来说，像Hexo这样的框架是再适合不过了。使用Hexo的时候不需要关心网站中的各个组件的代码是如何编写的，在搭建好框架之后我只需要撰写markdown文件就可以生成网页了。</p>
-<h4 id="3-1-1-1-安装依赖"><a href="#3-1-1-1-安装依赖" class="headerlink" title="3.1.1.1 安装依赖"></a>3.1.1.1 安装依赖</h4><p>Hexo有两个前置依赖：</p>
-<ul>
-<li>Node.js</li>
-<li>Git<blockquote>
-<p>Node.js 是一个可以执行 JavaScript 代码的软件程序。更准确地说，Node.js 是一个 JavaScript 运行环境。它是一个开发环境，可以将 JavaScript 代码用于服务器端脚本。</p>
-</blockquote>
-</li>
-</ul>
-<blockquote>
-<p>Git 是一个开源的分布式版本控制系统，用于敏捷高效地处理任何或小或大的项目。</p>
-</blockquote>
-<p>对于这两个东西的安装，可以参考Hexo官网的步骤：</p>
-<p><a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/docs/#%E5%AE%89%E8%A3%85-Git">Git的安装</a></p>
-<p><strong>指北：</strong><br>如果已习惯类似 <code>chocolatey</code> 这样的包管理工具，可以参考Hexo官网 <em>[安装 Node.js]</em> 一节中 <em>[其他的安装方法]</em> 看了一眼，貌似支持 <code>winget</code> 、 <code>chocolatey</code> 等</p>
-<h4 id="3-1-1-2-安装Hexo并本地启动"><a href="#3-1-1-2-安装Hexo并本地启动" class="headerlink" title="3.1.1.2 安装Hexo并本地启动"></a>3.1.1.2 安装Hexo并本地启动</h4><p>安装完git和node之后就可以使用npm安装Hexo了</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm install -g hexo-cli # 全局安装  </span><br><span class="line">  </span><br><span class="line">hexo -v # 查看hexo版本</span><br></pre></td></tr></table></figure>
-
-<p>开始创建一个项目 <code>my-blog</code></p>
-<p>请注意！下面这个命令行的指令中使用了 <code>cd my-blog</code> 这意味着往后的终端指令都在.&#x2F;my-blog路径下执行，并且在以后想要发布网页的时候也需要在该文件夹下执行指令。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">hexo init my-blog  </span><br><span class="line">  </span><br><span class="line">cd my-blog  </span><br><span class="line">  </span><br><span class="line">npm install</span><br></pre></td></tr></table></figure>
-
-
-<p>生成网页文件后本地启动</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo g # generate 生成界面  </span><br><span class="line">hexo s # server 本地启动网站</span><br></pre></td></tr></table></figure>
-
-
-<p>浏览器访问命令行中提示的网站<a target="_blank" rel="noopener" href="http://localhost:4000/">http://localhost:4000/</a>可以看到在本机的4000端口Hexo已经生成了一个示例网站了。</p>
-<h4 id="3-1-1-3-更换主题"><a href="#3-1-1-3-更换主题" class="headerlink" title="3.1.1.3 更换主题"></a>3.1.1.3 更换主题</h4><p>以本站使用的Fluid主题为例：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install --save hexo-theme-fluid</span><br></pre></td></tr></table></figure>
-
-<p>后面关于Fluid的各种配置请参考 <a target="_blank" rel="noopener" href="https://hexo.fluid-dev.com/docs/start/#%E6%8C%87%E5%AE%9A%E4%B8%BB%E9%A2%98">Hexo官方文档的这个小节往后</a> 执行。</p>
-<p>当执行完上述操作之后，完成了主题的配置，可以执行下述指令，查看效果</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hexo clean # 清除  </span><br><span class="line">hexo g # 生成  </span><br><span class="line">hexo s # 本地启动</span><br></pre></td></tr></table></figure>
-
-<p>再次访问<a target="_blank" rel="noopener" href="http://localhost:4000/">http://localhost:4000/</a>，应该设置已经生效了。</p>
-<h5 id="3-1-1-4-1-obsidian设置"><a href="#3-1-1-4-1-obsidian设置" class="headerlink" title="3.1.1.4.1 obsidian设置"></a>3.1.1.4.1 obsidian设置</h5><p>如果您还没有了解过obsidian，请参考这几篇博客，此处碍于篇幅就不展开obsidian的使用：</p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/428519519">玩转Obsidian，这里介绍了obsidian的基本用法</a></li>
-</ul>
-<blockquote>
-<p>实际上，可以把他就当成一个编辑器使用就好，需要用到什么功能的时候，可以去查有没有插件已经实现了你的想法</p>
-</blockquote>
-<p>为了能够让obsidian粘贴图片的时候改变上传图片的路径，并且自定义所插入的图片markdown链接，我们需要用到一个插件：Custom Attachment Location<br>此处安装方法可以参考这位的博客：</p>
-<ul>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_52357217/article/details/127562163">如何让Obsidian的图片存储形式设置为 .&#x2F;${filename}.assets</a></li>
-</ul>
-<blockquote>
-<p>笔者自己的设置格式为 <code>./$&#123;filename&#125;</code> 为的是和后面hexo那边的设置相匹配，以完成hexo和obsidian的连续自动化</p>
-</blockquote>
-<p>设置完成之后obsidian的相关设置应该长这样：</p>
-<p>设置 - 第三方插件设置 - Custom Attachment Location</p>
-<p>![[image-20240828190052741.png]]</p>
-<p>设置 - 文件与链接<br>![[image-20240828190104033.png]]</p>
-<p>这样设置完了之后，在后面用obsidian编写博客直接粘贴图片到编辑区后，就会在与当前笔记同级的同名子文件夹中保存图片，并且在正文中插入后面Hexo那边也可以识别的markdown图片链接，效果如下：<br>![[image-20240828190122350.png]]</p>
-<h5 id="3-1-1-4-2-Hexo端设置"><a href="#3-1-1-4-2-Hexo端设置" class="headerlink" title="3.1.1.4.2 Hexo端设置"></a>3.1.1.4.2 Hexo端设置</h5><p>修改 <code>_config.yml</code> 文件中的这个选项，这样可以生成一个同名的资源目录，用于存放同名文章使用的资产。</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">post_asset_folder:</span> <span class="literal">true</span>  </span><br><span class="line"><span class="attr">marked:</span> <span class="comment"># 如果原本有就更改下面的这些选项，如果没有就添加  </span></span><br><span class="line">  <span class="attr">prependRoot:</span> <span class="literal">true</span>  </span><br><span class="line">  <span class="attr">postAsset:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
-
-
-<h5 id="3-1-1-4-3-创建文章"><a href="#3-1-1-4-3-创建文章" class="headerlink" title="3.1.1.4.3 创建文章"></a>3.1.1.4.3 创建文章</h5><p>当你要开始写一篇文章的时候，在命令行中输入：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new post &lt;文章名&gt;</span><br></pre></td></tr></table></figure>
-
-<p>就会在 <code>./my-blog/source/_posts/</code> 路径下新建 <code>&lt;文章名&gt;.md</code> 文件和同名资产文件夹，然后直接在obsidian中选择打开 <code>./source</code> 文件夹后选择刚刚生成的md文件就可以开始愉快写作了！</p>
-<h2 id="3-2-发布！"><a href="#3-2-发布！" class="headerlink" title="3.2 发布！"></a>3.2 发布！</h2><p>在Github中注册账号，然后创建一个仓库，配置Github Pages：创建仓库的时候，仓库名请务必填 <code>&lt;你的github名&gt;.github.io</code> ，不然的话Github不会将该仓库认作Github Pages。</p>
-<p>在 <code>&lt;你的github名&gt;.github.io</code> 仓库对应的 GitHub Pages 设置页面 (访问路径为 <code>Settings -&gt; Pages</code> ) 可以找到个人博客的主页访问地址：https:&#x2F;&#x2F;&lt;GitHub 用户名&gt;.github.io。<br>token申请：<a target="_blank" rel="noopener" href="https://github.com/settings/tokens">https://github.com/settings/tokens</a><br>回到hexo这边，首先安装 <code>hexo-deployer-git</code> ：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure>
-
-<p>修改 <code>_config.yml</code> 文件：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">deploy:  </span><br><span class="line">type: git  </span><br><span class="line">repo: &lt;repository url&gt; # https://github.com/&lt;GitHub用户名&gt;/&lt;GitHub用户名&gt;.github.io.git  </span><br><span class="line">branch: [branch]  </span><br><span class="line">token: [token]</span><br></pre></td></tr></table></figure>
-
-
-<p>配置好了之后可以就可以在终端生成站点文件后推送到这个仓库，然后外网用户就可以在你的博客地址中访问你的博客了：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo clean  </span><br><span class="line">hexo deploy</span><br></pre></td></tr></table></figure>
-
-<h2 id="3-3-配置完之后的工作流"><a href="#3-3-配置完之后的工作流" class="headerlink" title="3.3 配置完之后的工作流"></a>3.3 配置完之后的工作流</h2><ol>
-<li>使用new指令新建一篇博客：</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new &lt;文章名&gt;</span><br></pre></td></tr></table></figure>
-
-<ol start="2">
-<li><p>打开obsidian开始写作，此时粘贴图片可以直接插入</p>
-</li>
-<li><p>写作完了之后，终端本地预览：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo g  </span><br><span class="line">hexo s</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>预览没问题之后，发布：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo d</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h1 id="4-结语"><a href="#4-结语" class="headerlink" title="4 结语"></a>4 结语</h1><p>利用obsidian结合hexo来写作自己的博客还有很多优点，除了插入图片比较舒心之外，yml的标签甚至奇妙地兼容了，obsidian里面添加文章首部的tag的时候界面适配也很好看，除此之外，就像typora一样的实时预览也是非常棒的功能。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/08/28/%E6%90%AD%E5%BB%BA%E8%87%AA%E5%B7%B1%E7%9A%84%E5%8D%9A%E5%AE%A2/" data-id="cm11uik8x00050kp4fhcp33ur" data-title="搭建自己的博客" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-hello-world" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/08/28/hello-world/" class="article-date">
-  <time class="dt-published" datetime="2024-08-28T09:58:06.715Z" itemprop="datePublished">2024-08-28</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2024/08/28/hello-world/">Hello World</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2024/08/28/hello-world/" data-id="cm11uik8v00030kp4f8gv862i" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
 
 
 </section>

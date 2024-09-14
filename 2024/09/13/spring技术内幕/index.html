@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   
   
-  <title>spring-boot | Hexo</title>
+  <title>&#39;spring技术内幕&#39; | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="问题1 使用java -jar  执行springboot的时候，显示没有“主属性清单”这句话是从哪里打印出来的呢？  问题2 idea怎么修改maven的版本">
+  <meta name="description" content="spring的设计理念和整体架构spring的核心实现：IOC容器依赖反转![[image-20240913114724155.png]] 控制反转：思考的是一个对象如何获取它依赖的对象的引用，这里反转指的是责任的反转，是自己new还是框架帮我们构造。 ioc容器干什么的？IOC实现了组件之间的解耦，开发人员来维护依赖关系比较麻烦，可以将获取资源的方向反转，让ioc去管理依赖关系，然后将依赖关系注">
 <meta property="og:type" content="article">
-<meta property="og:title" content="spring-boot">
-<meta property="og:url" content="http://example.com/2024/09/07/spring-boot/index.html">
+<meta property="og:title" content="&#39;spring技术内幕&#39;">
+<meta property="og:url" content="http://example.com/2024/09/13/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="问题1 使用java -jar  执行springboot的时候，显示没有“主属性清单”这句话是从哪里打印出来的呢？  问题2 idea怎么修改maven的版本">
+<meta property="og:description" content="spring的设计理念和整体架构spring的核心实现：IOC容器依赖反转![[image-20240913114724155.png]] 控制反转：思考的是一个对象如何获取它依赖的对象的引用，这里反转指的是责任的反转，是自己new还是框架帮我们构造。 ioc容器干什么的？IOC实现了组件之间的解耦，开发人员来维护依赖关系比较麻烦，可以将获取资源的方向反转，让ioc去管理依赖关系，然后将依赖关系注">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2024-09-07T13:10:38.000Z">
-<meta property="article:modified_time" content="2024-09-07T13:30:40.131Z">
+<meta property="article:published_time" content="2024-09-13T03:44:21.000Z">
+<meta property="article:modified_time" content="2024-09-13T09:35:45.653Z">
 <meta property="article:author" content="John Doe">
 <meta name="twitter:card" content="summary">
   
@@ -71,10 +71,10 @@
 </header>
 
       <div class="outer">
-        <section id="main"><article id="post-spring-boot" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+        <section id="main"><article id="post-spring技术内幕" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2024/09/07/spring-boot/" class="article-date">
-  <time class="dt-published" datetime="2024-09-07T13:10:38.000Z" itemprop="datePublished">2024-09-07</time>
+    <a href="/2024/09/13/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/" class="article-date">
+  <time class="dt-published" datetime="2024-09-13T03:44:21.000Z" itemprop="datePublished">2024-09-13</time>
 </a>
     
   </div>
@@ -85,7 +85,7 @@
         
   
     <h1 class="p-name article-title" itemprop="headline name">
-      spring-boot
+      &#39;spring技术内幕&#39;
     </h1>
   
 
@@ -93,17 +93,17 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <h1 id="问题1"><a href="#问题1" class="headerlink" title="问题1"></a>问题1</h1><blockquote>
-<p>使用java -jar  执行springboot的时候，显示没有“主属性清单”这句话是从哪里打印出来的呢？</p>
-</blockquote>
-<h1 id="问题2"><a href="#问题2" class="headerlink" title="问题2"></a>问题2</h1><blockquote>
-<p>idea怎么修改maven的版本</p>
-</blockquote>
+        <h1 id="spring的设计理念和整体架构"><a href="#spring的设计理念和整体架构" class="headerlink" title="spring的设计理念和整体架构"></a>spring的设计理念和整体架构</h1><h1 id="spring的核心实现：IOC容器"><a href="#spring的核心实现：IOC容器" class="headerlink" title="spring的核心实现：IOC容器"></a>spring的核心实现：IOC容器</h1><h2 id="依赖反转"><a href="#依赖反转" class="headerlink" title="依赖反转"></a>依赖反转</h2><p>![[image-20240913114724155.png]]</p>
+<p>控制反转：思考的是一个对象如何获取它依赖的对象的引用，这里反转指的是责任的反转，是自己new还是框架帮我们构造。</p>
+<h3 id="ioc容器干什么的？"><a href="#ioc容器干什么的？" class="headerlink" title="ioc容器干什么的？"></a>ioc容器干什么的？</h3><p>IOC实现了组件之间的解耦，开发人员来维护依赖关系比较麻烦，可以将获取资源的方向反转，让ioc去管理依赖关系，然后将依赖关系注入到组件中。具体的注入方法有接口注入、setter注入（最常见防止注入异常）、构造器注入。</p>
+<h3 id="IOC容器怎么实现的？"><a href="#IOC容器怎么实现的？" class="headerlink" title="IOC容器怎么实现的？"></a>IOC容器怎么实现的？</h3><p>BeanFactory和ApplicationContext</p>
+<p>所有的Bean由BeanFactory进行管理</p>
+<p>用户定义的Bean转成IOC容器中的数据结构这个结构就是BeanDefinition，然后通过BeanDefinitionRegistry注入到HashMap里面。</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2024/09/07/spring-boot/" data-id="cm11uik8w00040kp4642ke8hj" data-title="spring-boot" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://example.com/2024/09/13/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/" data-id="cm11uik8y00070kp4cfvxgkqg" data-title="&#39;spring技术内幕&#39;" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -113,19 +113,19 @@
     
 <nav id="article-nav">
   
-    <a href="/2024/09/11/sql%E7%BC%96%E7%A8%8B%E6%80%9D%E6%83%B3/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2024/09/14/gradle/" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">Newer</strong>
       <div class="article-nav-title">
         
-          (no title)
+          &#39;gradle&#39;
         
       </div>
     </a>
   
   
-    <a href="/2024/08/30/git%E5%AE%9E%E6%88%98/" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="/2024/09/11/%E5%AD%A6%E4%B9%A0%E7%BD%91%E7%AB%99/" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">git实战</div>
+      <div class="article-nav-title">&#39;学习网站&#39;</div>
     </a>
   
 </nav>
