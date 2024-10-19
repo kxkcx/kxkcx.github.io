@@ -19,25 +19,27 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"kxkcx.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.21.0","exturl":false,"sidebar":{"position":"left","title":"coderkou","description":"Machine learning engineer at Bytedance, interested in recommendation and advertising system.","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
 
-    <meta name="description" content="Fake it Till You Make it.">
-<meta property="og:type" content="website">
-<meta property="og:title" content="coderkou">
-<meta property="og:url" content="https://kxkcx.github.io/archives/2024/08/index.html">
+    <meta name="description" content="spring的设计理念和整体架构spring的核心实现：IOC容器依赖反转控制反转：思考的是一个对象如何获取它依赖的对象的引用，这里反转指的是责任的反转，是自己new还是框架帮我们构造。 ioc容器干什么的？IOC实现了组件之间的解耦，开发人员来维护依赖关系比较麻烦，可以将获取资源的方向反转，让ioc去管理依赖关系，然后将依赖关系注入到组件中。具体的注入方法有接口注入、setter注入（最常见防止">
+<meta property="og:type" content="article">
+<meta property="og:title" content="spring技术内幕">
+<meta property="og:url" content="https://kxkcx.github.io/2024/09/14/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/index.html">
 <meta property="og:site_name" content="coderkou">
-<meta property="og:description" content="Fake it Till You Make it.">
+<meta property="og:description" content="spring的设计理念和整体架构spring的核心实现：IOC容器依赖反转控制反转：思考的是一个对象如何获取它依赖的对象的引用，这里反转指的是责任的反转，是自己new还是框架帮我们构造。 ioc容器干什么的？IOC实现了组件之间的解耦，开发人员来维护依赖关系比较麻烦，可以将获取资源的方向反转，让ioc去管理依赖关系，然后将依赖关系注入到组件中。具体的注入方法有接口注入、setter注入（最常见防止">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-09-14T07:56:58.000Z">
+<meta property="article:modified_time" content="2024-09-14T11:13:16.219Z">
 <meta property="article:author" content="coderkou">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://kxkcx.github.io/archives/2024/08/">
+<link rel="canonical" href="https://kxkcx.github.io/2024/09/14/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"archives/2024/08/index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://kxkcx.github.io/2024/09/14/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/","path":"2024/09/14/spring技术内幕/","title":"spring技术内幕"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>归档 | coderkou</title>
+<title>spring技术内幕 | coderkou</title>
   
 
 
@@ -70,7 +72,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">coderkou</h1>
+      <p class="site-title">coderkou</p>
       <i class="logo-line"></i>
     </a>
   </div>
@@ -96,7 +98,7 @@
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -109,6 +111,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#spring%E7%9A%84%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5%E5%92%8C%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">spring的设计理念和整体架构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#spring%E7%9A%84%E6%A0%B8%E5%BF%83%E5%AE%9E%E7%8E%B0%EF%BC%9AIOC%E5%AE%B9%E5%99%A8"><span class="nav-number">2.</span> <span class="nav-text">spring的核心实现：IOC容器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BE%9D%E8%B5%96%E5%8F%8D%E8%BD%AC"><span class="nav-number">2.1.</span> <span class="nav-text">依赖反转</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ioc%E5%AE%B9%E5%99%A8%E5%B9%B2%E4%BB%80%E4%B9%88%E7%9A%84%EF%BC%9F"><span class="nav-number">2.1.1.</span> <span class="nav-text">ioc容器干什么的？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IOC%E5%AE%B9%E5%99%A8%E6%80%8E%E4%B9%88%E5%AE%9E%E7%8E%B0%E7%9A%84%EF%BC%9F"><span class="nav-number">2.1.2.</span> <span class="nav-text">IOC容器怎么实现的？</span></a></li></ol></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -155,69 +158,95 @@
 
     </div>
 
-    <div class="main-inner archive posts-collapse">
+    <div class="main-inner post posts-expand">
 
 
   
-  
-  
-  <div class="post-block">
-    <div class="post-content">
-      <div class="collection-title">
-        <span class="collection-header">嗯..! 目前共计 5 篇日志。 继续努力。</span>
-      </div>
 
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kxkcx.github.io/2024/09/14/spring%E6%8A%80%E6%9C%AF%E5%86%85%E5%B9%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="coderkou">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="coderkou">
+      <meta itemprop="description" content="Fake it Till You Make it.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="spring技术内幕 | coderkou">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          spring技术内幕
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
       
-    <div class="collection-year">
-      <span class="collection-header">2024<span class="collection-year-count">5</span></span>
+
+      <time title="创建时间：2024-09-14 15:56:58 / 修改时间：19:13:16" itemprop="dateCreated datePublished" datetime="2024-09-14T15:56:58+08:00">2024-09-14</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="spring的设计理念和整体架构"><a href="#spring的设计理念和整体架构" class="headerlink" title="spring的设计理念和整体架构"></a>spring的设计理念和整体架构</h1><h1 id="spring的核心实现：IOC容器"><a href="#spring的核心实现：IOC容器" class="headerlink" title="spring的核心实现：IOC容器"></a>spring的核心实现：IOC容器</h1><h2 id="依赖反转"><a href="#依赖反转" class="headerlink" title="依赖反转"></a>依赖反转</h2><p>控制反转：思考的是一个对象如何获取它依赖的对象的引用，这里反转指的是责任的反转，是自己new还是框架帮我们构造。</p>
+<h3 id="ioc容器干什么的？"><a href="#ioc容器干什么的？" class="headerlink" title="ioc容器干什么的？"></a>ioc容器干什么的？</h3><p>IOC实现了组件之间的解耦，开发人员来维护依赖关系比较麻烦，可以将获取资源的方向反转，让ioc去管理依赖关系，然后将依赖关系注入到组件中。具体的注入方法有接口注入、setter注入（最常见防止注入异常）、构造器注入。</p>
+<h3 id="IOC容器怎么实现的？"><a href="#IOC容器怎么实现的？" class="headerlink" title="IOC容器怎么实现的？"></a>IOC容器怎么实现的？</h3><p>BeanFactory和ApplicationContext</p>
+<p>所有的Bean由BeanFactory进行管理</p>
+<p>用户定义的Bean转成IOC容器中的数据结构这个结构就是BeanDefinition，然后通过BeanDefinitionRegistry注入到HashMap里面。</p>
+
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2024-08-30T13:09:41+08:00"
-              content="2024-08-30">
-          08-30
-        </time>
-      </div>
+    
+    
+    
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2024/08/30/git%E5%AE%9E%E6%88%98/" itemprop="url">
-            <span itemprop="name">git实战</span>
-          </a>
-      </div>
+    <footer class="post-footer">
 
-      
-    </header>
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/09/07/spring-boot/" rel="prev" title="spring-boot">
+                  <i class="fa fa-angle-left"></i> spring-boot
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2024/10/20/test/" rel="next" title="test">
+                  test <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
   </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2024-08-28T18:40:40+08:00"
-              content="2024-08-28">
-          08-28
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2024/08/28/%E6%90%AD%E5%BB%BA%E8%87%AA%E5%B7%B1%E7%9A%84%E5%8D%9A%E5%AE%A2/" itemprop="url">
-            <span itemprop="name">搭建自己的博客</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
+</div>
 
 
-    </div>
-  </div>
-  
-  
-  
+
+
+
 
 </div>
   </main>
