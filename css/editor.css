@@ -214,6 +214,57 @@ body {
   overflow: auto;
 }
 
+.published-section {
+  margin-top: 14px;
+}
+
+.published-header {
+  margin-top: 0;
+}
+
+.published-doc-list {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f9fbfd;
+  padding: 8px;
+  min-height: 120px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.published-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.published-item:hover {
+  background: #eaf0f7;
+}
+
+.published-item.active {
+  background: #dcecf0;
+  color: #0f5b63;
+}
+
+.published-item-title {
+  display: block;
+}
+
+.published-item-path {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 400;
+}
+
 .tree-dir {
   margin: 2px 0;
 }
