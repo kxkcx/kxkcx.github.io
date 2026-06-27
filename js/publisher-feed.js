@@ -13,6 +13,12 @@
     if (!value) return "";
     return value.charAt(0) === "/" ? value : "/" + value;
   }
+  function withVersion(url, version) {
+    var base = normalizeUrl(url);
+    var v = String(version || "").trim();
+    if (!base || !v) return base;
+    return base + (base.indexOf("?") === -1 ? "?" : "&") + "v=" + encodeURIComponent(v);
+  }
   function parseDate(input) {
     var d = new Date(input || "");
     return Number.isNaN(d.getTime()) ? null : d;
@@ -37,18 +43,14 @@
   function patchHome(posts) {
     var root = document.querySelector(".main-inner.index.posts-expand");
     if (!root) return;
-    var seen = {};
-    var links = root.querySelectorAll("a.post-title-link");
-    for (var i = 0; i < links.length; i++) {
-      var href = normalizeUrl(links[i].getAttribute("href") || "");
-      if (href) seen[href] = true;
+    var blocks = root.querySelectorAll(".post-block");
+    for (var i = 0; i < blocks.length; i++) {
+      blocks[i].remove();
     }
-    var anchor = root.querySelector(".post-block");
-    if (!anchor) return;
     var ordered = sorted(posts);
-    for (var j = ordered.length - 1; j >= 0; j--) {
+    for (var j = 0; j < ordered.length; j++) {
       var post = ordered[j];
-      if (!post.date || seen[post.url]) continue;
+      if (!post.date || !post.url) continue;
       var block = document.createElement("div");
       block.className = "post-block";
       block.style.visibility = "visible";
@@ -62,8 +64,7 @@
         descendants[n].style.opacity = "1";
         descendants[n].style.transform = "none";
       }
-      root.insertBefore(block, anchor);
-      seen[post.url] = true;
+      root.appendChild(block);
     }
   }
   function patchArchives(posts) {
