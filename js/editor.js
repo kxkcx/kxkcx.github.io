@@ -963,6 +963,11 @@
     };
   }
 
+  function repoPathFromArticleUrl(url) {
+    var normalized = String(url || '').trim().replace(/^https?:\/\/[^/]+/i, '').replace(/^\/+/, '');
+    return trimSlashes(normalized);
+  }
+
   async function deletePublishedArtifacts(context, markdownFilePaths) {
     var manifestPath = 'blog-data/posts.json';
     var articleUrls = [];
@@ -1204,11 +1209,17 @@
 
       var manifestPosts = await readJsonFile(context.owner, context.repo, context.branch, 'blog-data/posts.json', context.token);
       var publishedMeta = {};
+      var publishedList = [];
+      var htmlDocSet = {};
+      for (var h = 0; h < htmlDocs.length; h++) {
+        htmlDocSet[htmlDocs[h]] = true;
+      }
       for (var p = 0; p < manifestPosts.length; p++) {
         var item = manifestPosts[p];
-        var url = String(item && item.url || '').replace(/^\//, '');
-        if (url) {
-          publishedMeta[url] = item;
+        var repoPath = repoPathFromArticleUrl(item && item.url || '');
+        if (repoPath && htmlDocSet[repoPath]) {
+          publishedMeta[repoPath] = item;
+          publishedList.push(repoPath);
         }
       }
 
@@ -1223,7 +1234,7 @@
 
       markdownPaths = docs;
       allDocPaths = docs;
-      publishedHtmlPaths = htmlDocs;
+      publishedHtmlPaths = publishedList;
       publishedPostMetaByPath = publishedMeta;
       directoryMarkerPaths = markers;
       directoryPaths = dirs.sort(function (a, b) {
@@ -1231,8 +1242,8 @@
       });
       renderDocTree(markdownPaths);
       renderPublishedDocs(publishedHtmlPaths);
-      setDocStatus('已加载 ' + docs.length + ' 个 Markdown 文档，' + htmlDocs.length + ' 个已发布 HTML 文档。', 'success');
-      setPublishedStatus('已加载 ' + htmlDocs.length + ' 个已发布博客。', 'success');
+      setDocStatus('已加载 ' + docs.length + ' 个 Markdown 文档，' + publishedList.length + ' 个已发布博客。', 'success');
+      setPublishedStatus('已加载 ' + publishedList.length + ' 个已发布博客。', 'success');
     } catch (error) {
       console.error(error);
       setDocStatus('加载文档列表失败: ' + error.message, 'error');
