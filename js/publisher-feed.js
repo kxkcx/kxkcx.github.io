@@ -51,8 +51,17 @@
       if (!post.date || seen[post.url]) continue;
       var block = document.createElement("div");
       block.className = "post-block";
+      block.style.visibility = "visible";
+      block.style.opacity = "1";
+      block.style.transform = "none";
       var body = post.excerpt ? ("<div class=\"post-body\" itemprop=\"articleBody\"><p>" + safeText(post.excerpt) + "</p></div>") : "";
       block.innerHTML = "<article itemscope itemtype=\"http://schema.org/Article\" class=\"post-content\"><header class=\"post-header\"><h2 class=\"post-title\" itemprop=\"name headline\"><a href=\"" + safeText(post.url) + "\" class=\"post-title-link\" itemprop=\"url\">" + safeText(post.title) + "</a></h2><div class=\"post-meta-container\"><div class=\"post-meta\"><span class=\"post-meta-item\"><span class=\"post-meta-item-icon\"><i class=\"far fa-calendar\"></i></span><span class=\"post-meta-item-text\">发表于</span><time>" + dateText(post.date) + "</time></span></div></div></header>" + body + "</article>";
+      var descendants = block.querySelectorAll("*");
+      for (var n = 0; n < descendants.length; n++) {
+        descendants[n].style.visibility = "visible";
+        descendants[n].style.opacity = "1";
+        descendants[n].style.transform = "none";
+      }
       root.insertBefore(block, anchor);
       seen[post.url] = true;
     }
