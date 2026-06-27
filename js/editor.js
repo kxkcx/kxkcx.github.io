@@ -21,6 +21,12 @@
       return;
     }
     loginStatusEl.textContent = message;
+        '  function withVersion(url, version) {',
+        '    var base = normalizeUrl(url);',
+        '    var v = String(version || "").trim();',
+        '    if (!base || !v) return base;',
+        '    return base + (base.indexOf("?") === -1 ? "?" : "&") + "v=" + encodeURIComponent(v);',
+        '  }',
     loginStatusEl.className = 'status' + (type ? ' ' + type : '');
   }
 
@@ -109,6 +115,7 @@
   var statusEl = document.getElementById('status');
   var previewBodyEl = document.getElementById('previewBody');
   var previewBtn = document.getElementById('previewBtn');
+  var compileBtn = document.getElementById('compileBtn');
   var deployBtn = document.getElementById('deployBtn');
   var previewPanel = document.getElementById('previewPanel');
   var tokenHelpBtn = document.getElementById('tokenHelpBtn');
@@ -120,11 +127,13 @@
   var selectedDirEl = document.getElementById('selectedDir');
   var docStatusEl = document.getElementById('docStatus');
   var refreshDocsBtn = document.getElementById('refreshDocsBtn');
-  var createDocBtn = document.getElementById('createDocBtn');
-  var saveDocBtn = document.getElementById('saveDocBtn');
-  var renameDocBtn = document.getElementById('renameDocBtn');
-  var deleteDocBtn = document.getElementById('deleteDocBtn');
   var selectedNodeEl = document.getElementById('selectedNode');
+  var treeContextMenuEl = document.getElementById('treeContextMenu');
+  var contextCreateDocBtn = document.getElementById('contextCreateDocBtn');
+  var contextCreateDirBtn = document.getElementById('contextCreateDirBtn');
+  var contextSaveDocBtn = document.getElementById('contextSaveDocBtn');
+  var contextRenameDocBtn = document.getElementById('contextRenameDocBtn');
+  var contextDeleteDocBtn = document.getElementById('contextDeleteDocBtn');
   var currentDocPath = '';
   var currentDocSha = '';
   var selectedDirPath = 'posts';
@@ -132,6 +141,13 @@
   var selectedNodePath = 'posts';
   var markdownPaths = [];
   var allDocPaths = [];
+  var publishedHtmlPaths = [];
+  var directoryPaths = [];
+  var directoryMarkerPaths = [];
+  var compiledPayload = null;
+  var compiledPreviewUrl = '';
+  var compileDirty = true;
+  var directoryMarkerName = '.publisher-dir';
 
   function setStatus(message, type) {
     statusEl.textContent = message;
@@ -146,9 +162,139 @@
     docStatusEl.className = 'status' + (type ? ' ' + type : '');
   }
 
+  function markCompileDirty() {
+    compileDirty = true;
+  }
+
+  function clearCompiledPreviewUrl() {
+    if (compiledPreviewUrl) {
+      URL.revokeObjectURL(compiledPreviewUrl);
+      compiledPreviewUrl = '';
+    }
+  }
+
+  function hideTreeContextMenu() {
+    if (!treeContextMenuEl) {
+      return;
+    }
+    treeContextMenuEl.hidden = true;
+  }
+
+  function updateTreeContextMenuState() {
+    if (!treeContextMenuEl) {
+      return;
+    }
+
+    var canSave = selectedNodeType === 'file' && isMarkdownPath(selectedNodePath);
+    var canRename = selectedNodeType === 'dir' || (selectedNodeType === 'file' && isMarkdownPath(selectedNodePath));
+    var canDelete = selectedNodeType === 'dir' || (selectedNodeType === 'file' && isMarkdownPath(selectedNodePath));
+
+    if (contextSaveDocBtn) {
+      contextSaveDocBtn.disabled = !canSave;
+    }
+    if (contextRenameDocBtn) {
+      contextRenameDocBtn.disabled = !canRename;
+    }
+    if (contextDeleteDocBtn) {
+      contextDeleteDocBtn.disabled = !canDelete;
+    }
+  }
+
+  function showTreeContextMenu(event, nodeType, nodePath) {
+    if (!treeContextMenuEl) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (nodeType === 'file') {
+      setSelectedFile(nodePath);
+    } else {
+      setSelectedDirectory(nodePath || 'posts');
+    }
+
+    updateTreeContextMenuState();
+    treeContextMenuEl.hidden = false;
+
+    var menuWidth = treeContextMenuEl.offsetWidth || 136;
+    var menuHeight = treeContextMenuEl.offsetHeight || 180;
+    var anchor = event.currentTarget;
+    var rect = anchor && typeof anchor.getBoundingClientRect === 'function'
+      ? anchor.getBoundingClientRect()
+      : { left: event.clientX, right: event.clientX, top: event.clientY, bottom: event.clientY, height: 0 };
+    var gap = 8;
+    var preferredRight = rect.right + gap;
+    var preferredLeft = rect.left - menuWidth - gap;
+    var x = preferredRight + menuWidth <= window.innerWidth
+      ? preferredRight
+      : Math.max(8, preferredLeft);
+    var maxY = window.innerHeight - menuHeight - 8;
+    var y = Math.max(8, Math.min(rect.top, maxY));
+
+    treeContextMenuEl.style.left = x + 'px';
+    treeContextMenuEl.style.top = y + 'px';
+  }
+
+  function appendVersionToUrl(url, version) {
+    var value = String(url || '');
+    if (!value || value.indexOf('://') !== -1 || value.indexOf('data:') === 0 || value.indexOf('blob:') === 0 || value.charAt(0) !== '/') {
+      return value;
+    }
+    if (/[?&]v=/.test(value)) {
+      return value.replace(/([?&])v=[^&]*/i, '$1v=' + encodeURIComponent(version));
+    }
+    return value + (value.indexOf('?') === -1 ? '?' : '&') + 'v=' + encodeURIComponent(version);
+  }
+
+  function applyNoCacheMeta(doc) {
+    var head = doc.head || doc.querySelector('head');
+    if (!head) {
+      return;
+    }
+
+    function upsertMeta(httpEquiv, content) {
+      var selector = 'meta[http-equiv="' + httpEquiv + '"]';
+      var node = head.querySelector(selector);
+      if (!node) {
+        node = doc.createElement('meta');
+        node.setAttribute('http-equiv', httpEquiv);
+        head.insertBefore(node, head.firstChild);
+      }
+      node.setAttribute('content', content);
+    }
+
+    upsertMeta('Cache-Control', 'no-cache, no-store, must-revalidate');
+    upsertMeta('Pragma', 'no-cache');
+    upsertMeta('Expires', '0');
+  }
+
+  function applyVersionToStaticAssets(doc, version) {
+    var assetNodes = doc.querySelectorAll('link[href], script[src], img[src]');
+    for (var i = 0; i < assetNodes.length; i++) {
+      var node = assetNodes[i];
+      if (node.hasAttribute('href')) {
+        node.setAttribute('href', appendVersionToUrl(node.getAttribute('href'), version));
+      }
+      if (node.hasAttribute('src')) {
+        node.setAttribute('src', appendVersionToUrl(node.getAttribute('src'), version));
+      }
+    }
+  }
+
+  function buildPreviewHtml(articleHtml) {
+    var origin = window.location.origin.replace(/\/$/, '');
+    return String(articleHtml || '')
+      .replace(/(<head[^>]*>)/i, '$1\n<base href="' + origin + '/">')
+      .replace(/(href|src)="\/(?!\/)/g, '$1="' + origin + '/');
+  }
+
   function basename(path) {
     var chunks = String(path || '').split('/');
     return chunks[chunks.length - 1] || '';
+  }
+
+  function isDirectoryMarkerPath(path) {
+    return new RegExp('(?:^|/)' + directoryMarkerName.replace('.', '\\.') + '$', 'i').test(String(path || ''));
   }
 
   function dirname(path) {
@@ -389,6 +535,100 @@
     }
   }
 
+  async function resolveCompilePayload() {
+    var deployVersion = String(Date.now());
+    var markdown = markdownEl.value || '';
+    var title = titleEl.value.trim();
+    var selectedDocPath = String(docPathEl.value || '').trim();
+
+    if (!title) {
+      title = titleFromMarkdown(markdown, selectedDocPath || currentDocPath || '');
+      titleEl.value = title;
+    }
+
+    if (!markdown.trim()) {
+      markdown = '# ' + title + '\n\n';
+      markdownEl.value = markdown;
+    }
+
+    var slug = slugify(slugEl.value.trim() || title);
+    var now = new Date();
+    var year = String(now.getFullYear());
+    var month = String(now.getMonth() + 1).padStart(2, '0');
+    var day = String(now.getDate()).padStart(2, '0');
+
+    var postDocMatch = selectedDocPath.match(/^posts\/(\d{4})-(\d{2})-(\d{2})-(.+)\.md$/i);
+    if (postDocMatch) {
+      year = postDocMatch[1];
+      month = postDocMatch[2];
+      day = postDocMatch[3];
+      slug = slugify(postDocMatch[4]);
+    }
+
+    var publishedHtmlMatch = selectedDocPath.match(/^(\d{4})\/(\d{2})\/(\d{2})\/(.+)\/index\.html$/i);
+    if (publishedHtmlMatch) {
+      year = publishedHtmlMatch[1];
+      month = publishedHtmlMatch[2];
+      day = publishedHtmlMatch[3];
+      slug = slugify(publishedHtmlMatch[4]);
+    }
+    slugEl.value = slug;
+
+    var dateText = year + '-' + month + '-' + day;
+    var htmlContent = marked.parse(markdown);
+    previewBodyEl.innerHTML = htmlContent;
+    if (previewPanel) {
+      previewPanel.open = true;
+    }
+
+    var htmlPath = year + '/' + month + '/' + day + '/' + slug + '/index.html';
+    var markdownPath = selectedDocPath && /\.md$/i.test(selectedDocPath)
+      ? selectedDocPath
+      : 'posts/' + dateText + '-' + slug + '.md';
+    var articleUrl = '/' + htmlPath;
+    var excerpt = buildExcerptFromMarkdown(markdown, 180);
+    var articleHtml = await buildArticleHtml(title, htmlContent, dateText, htmlPath, selectedDocPath, deployVersion);
+    var markdownWithMeta = [
+      '# ' + title,
+      '',
+      '> 发布时间: ' + dateText,
+      '',
+      markdown
+    ].join('\n');
+
+    return {
+      title: title,
+      markdown: markdown,
+      selectedDocPath: selectedDocPath,
+      slug: slug,
+      dateText: dateText,
+      htmlContent: htmlContent,
+      htmlPath: htmlPath,
+      markdownPath: markdownPath,
+      articleUrl: articleUrl,
+      excerpt: excerpt,
+      articleHtml: articleHtml,
+      markdownWithMeta: markdownWithMeta
+      ,deployVersion: deployVersion
+    };
+  }
+
+  async function compileArticle() {
+    try {
+      setStatus('正在编译 Markdown...', '');
+      var payload = await resolveCompilePayload();
+      compiledPayload = payload;
+      compileDirty = false;
+      clearCompiledPreviewUrl();
+      compiledPreviewUrl = URL.createObjectURL(new Blob([buildPreviewHtml(payload.articleHtml)], { type: 'text/html;charset=utf-8' }));
+      window.open(compiledPreviewUrl, '_blank', 'noopener');
+      setStatus('编译完成，已生成本地网页结果。确认无误后再点“部署”推送到 GitHub。', 'success');
+    } catch (error) {
+      console.error(error);
+      setStatus('编译失败: ' + error.message, 'error');
+    }
+  }
+
   async function githubRequest(url, token, options) {
     var response = await fetch(url, {
       method: options.method || 'GET',
@@ -558,8 +798,28 @@
     };
   }
 
-  function buildTree(paths) {
+  function buildTree(paths, dirs) {
     var root = { dirs: {}, files: [] };
+    var dirList = Array.isArray(dirs) ? dirs.slice().sort(function (a, b) {
+      return a.localeCompare(b);
+    }) : [];
+
+    for (var d = 0; d < dirList.length; d++) {
+      var dirPath = dirList[d];
+      var dirParts = dirPath.split('/');
+      var dirCursor = root;
+      for (var k = 0; k < dirParts.length; k++) {
+        var dirPart = dirParts[k];
+        if (!dirPart) {
+          continue;
+        }
+        if (!dirCursor.dirs[dirPart]) {
+          dirCursor.dirs[dirPart] = { name: dirPart, path: dirParts.slice(0, k + 1).join('/'), dirs: {}, files: [] };
+        }
+        dirCursor = dirCursor.dirs[dirPart];
+      }
+    }
+
     for (var i = 0; i < paths.length; i++) {
       var path = paths[i];
       var parts = path.split('/');
@@ -580,6 +840,65 @@
     return root;
   }
 
+  function clearEditorState() {
+    currentDocPath = '';
+    currentDocSha = '';
+    markdownEl.value = '';
+    titleEl.value = '';
+    slugEl.value = '';
+    previewBodyEl.innerHTML = '';
+    clearCompiledPreviewUrl();
+    compiledPayload = null;
+    compileDirty = true;
+  }
+
+  function ensureDirectoryPath(path) {
+    var current = trimSlashes(path);
+    while (current) {
+      if (directoryPaths.indexOf(current) === -1) {
+        directoryPaths.push(current);
+      }
+      current = dirname(current);
+    }
+    directoryPaths.sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+  }
+
+  function rebuildDirectoryPathsFromState() {
+    var dirs = collectDirectoryPathsFromFiles(markdownPaths);
+    for (var i = 0; i < directoryMarkerPaths.length; i++) {
+      var markerDir = dirname(directoryMarkerPaths[i]);
+      if (markerDir && dirs.indexOf(markerDir) === -1) {
+        dirs.push(markerDir);
+      }
+    }
+    directoryPaths = dirs.sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+  }
+
+  function refreshTreeFromState() {
+    rebuildDirectoryPathsFromState();
+    renderDocTree(markdownPaths);
+  }
+
+  function replacePathPrefix(path, oldPrefix, newPrefix) {
+    return newPrefix + path.slice(oldPrefix.length);
+  }
+
+  function collectDirectoryPathsFromFiles(paths) {
+    var dirMap = {};
+    for (var i = 0; i < paths.length; i++) {
+      var currentDir = dirname(paths[i]);
+      while (currentDir) {
+        dirMap[currentDir] = true;
+        currentDir = dirname(currentDir);
+      }
+    }
+    return Object.keys(dirMap);
+  }
+
   function renderDirNode(node, container, depth) {
     var details = document.createElement('details');
     details.className = 'tree-dir';
@@ -594,19 +913,10 @@
       setSelectedDirectory(node.path);
       renderDocTree(markdownPaths);
     });
-
-    var pickBtn = document.createElement('button');
-    pickBtn.type = 'button';
-    pickBtn.className = 'tree-pick';
-    pickBtn.textContent = '在此新建';
-    pickBtn.addEventListener('click', function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-      setSelectedDirectory(node.path);
-      setDocStatus('已选目录: ' + node.path + '，可直接点“新建”。', 'success');
+    summary.addEventListener('contextmenu', function (event) {
+      showTreeContextMenu(event, 'dir', node.path);
     });
 
-    summary.appendChild(pickBtn);
     details.appendChild(summary);
 
     var childWrap = document.createElement('div');
@@ -634,6 +944,11 @@
           loadMarkdownDoc(path);
         };
       })(filePath));
+      fileBtn.addEventListener('contextmenu', (function (path) {
+        return function (event) {
+          showTreeContextMenu(event, 'file', path);
+        };
+      })(filePath));
       childWrap.appendChild(fileBtn);
     }
 
@@ -646,16 +961,17 @@
       return;
     }
     docTreeEl.innerHTML = '';
-    var tree = buildTree(paths);
+    var tree = buildTree(paths, directoryPaths);
+    var rootTree = tree.dirs.posts || { dirs: {}, files: [] };
 
-    var topDirs = Object.keys(tree.dirs).sort(function (a, b) {
+    var topDirs = Object.keys(rootTree.dirs).sort(function (a, b) {
       return a.localeCompare(b);
     });
     for (var i = 0; i < topDirs.length; i++) {
-      renderDirNode(tree.dirs[topDirs[i]], docTreeEl, 0);
+      renderDirNode(rootTree.dirs[topDirs[i]], docTreeEl, 0);
     }
 
-    var rootFiles = tree.files.slice().sort(function (a, b) {
+    var rootFiles = rootTree.files.slice().sort(function (a, b) {
       return a.localeCompare(b);
     });
     for (var j = 0; j < rootFiles.length; j++) {
@@ -667,6 +983,11 @@
       rootBtn.addEventListener('click', (function (path) {
         return function () {
           loadMarkdownDoc(path);
+        };
+      })(rootFiles[j]));
+      rootBtn.addEventListener('contextmenu', (function (path) {
+        return function (event) {
+          showTreeContextMenu(event, 'file', path);
         };
       })(rootFiles[j]));
       docTreeEl.appendChild(rootBtn);
@@ -687,7 +1008,7 @@
       var nodes = Array.isArray(tree.tree) ? tree.tree : [];
       var docs = nodes
         .filter(function (node) {
-          return node && node.type === 'blob' && /\.md$/i.test(node.path || '');
+          return node && node.type === 'blob' && /\.md$/i.test(node.path || '') && !isDirectoryMarkerPath(node.path || '');
         })
         .map(function (node) {
           return node.path;
@@ -707,9 +1028,31 @@
           return a.localeCompare(b);
         });
 
+      var markers = nodes
+        .filter(function (node) {
+          return node && node.type === 'blob' && isDirectoryMarkerPath(node.path || '');
+        })
+        .map(function (node) {
+          return node.path;
+        });
+
+      var dirs = collectDirectoryPathsFromFiles(docs.concat(htmlDocs));
+
+      for (var m = 0; m < markers.length; m++) {
+        var markerDir = dirname(markers[m]);
+        if (markerDir && dirs.indexOf(markerDir) === -1) {
+          dirs.push(markerDir);
+        }
+      }
+
       markdownPaths = docs;
-      allDocPaths = docs.concat(htmlDocs);
-      renderDocTree(allDocPaths);
+      allDocPaths = docs;
+      publishedHtmlPaths = htmlDocs;
+      directoryMarkerPaths = markers;
+      directoryPaths = dirs.sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+      renderDocTree(markdownPaths);
       setDocStatus('已加载 ' + docs.length + ' 个 Markdown 文档，' + htmlDocs.length + ' 个已发布 HTML 文档。', 'success');
     } catch (error) {
       console.error(error);
@@ -769,7 +1112,7 @@
         ? selectedNodePath
         : String(docPathEl.value || currentDocPath || '').trim();
       if (!targetPath || !/\.md$/i.test(targetPath)) {
-        setDocStatus('仅支持保存 Markdown 文件。HTML 已发布文档请使用“编译并部署”更新。', 'error');
+        setDocStatus('仅支持保存 Markdown 文件。HTML 已发布文档请先编译，再部署更新。', 'error');
         return;
       }
 
@@ -788,7 +1131,7 @@
       currentDocSha = file && file.sha ? file.sha : '';
       setSelectedFile(targetPath);
       setDocStatus('保存成功: ' + targetPath, 'success');
-      await listMarkdownDocs();
+      refreshTreeFromState();
       setStatus('Markdown 文档已保存。', 'success');
     } catch (error) {
       console.error(error);
@@ -850,14 +1193,67 @@
       await upsertFile(context.owner, context.repo, context.branch, targetPath, content, context.token, 'docs: create ' + targetPath);
       docPathEl.value = targetPath;
       currentDocPath = targetPath;
-      currentDocSha = '';
+      currentDocSha = await getFileSha(context.owner, context.repo, context.branch, targetPath, context.token) || '';
       setSelectedFile(targetPath);
-      await listMarkdownDocs();
-      await loadMarkdownDoc(targetPath);
+      if (markdownPaths.indexOf(targetPath) === -1) {
+        markdownPaths.push(targetPath);
+        markdownPaths.sort(function (a, b) {
+          return a.localeCompare(b);
+        });
+      }
+      ensureDirectoryPath(dirname(targetPath));
+      markdownEl.value = content;
+      titleEl.value = titleFromMarkdown(content, targetPath);
+      slugEl.value = slugFromPath(targetPath, titleEl.value);
+      renderPreview();
+      refreshTreeFromState();
       setStatus('新建 Markdown 文档成功。', 'success');
     } catch (error) {
       console.error(error);
       setDocStatus('新建文档失败: ' + error.message, 'error');
+    }
+  }
+
+  async function createDirectory() {
+    try {
+      var context = getRepoContext();
+      if (!context.owner || !context.repo || !context.token) {
+        setDocStatus('请先填写 Owner、Repo、Token。', 'error');
+        return;
+      }
+
+      var baseDir = selectedNodeType === 'file'
+        ? dirname(selectedNodePath)
+        : (selectedNodePath || selectedDirPath || 'posts');
+      var newDirNameInput = window.prompt('新建目录名', 'new-folder');
+      if (newDirNameInput === null) {
+        return;
+      }
+
+      var newDirName = String(newDirNameInput || '').trim().replace(/[\\/]/g, '-');
+      if (!newDirName) {
+        setDocStatus('目录名不能为空。', 'error');
+        return;
+      }
+
+      var targetDirPath = trimSlashes(baseDir ? baseDir + '/' + newDirName : newDirName);
+      if (directoryPaths.indexOf(targetDirPath) !== -1) {
+        setDocStatus('该目录已存在。', 'error');
+        return;
+      }
+
+      var markerPath = targetDirPath + '/' + directoryMarkerName;
+      await upsertFile(context.owner, context.repo, context.branch, markerPath, '', context.token, 'docs: create dir ' + targetDirPath);
+      setSelectedDirectory(targetDirPath);
+      if (directoryMarkerPaths.indexOf(markerPath) === -1) {
+        directoryMarkerPaths.push(markerPath);
+      }
+      ensureDirectoryPath(targetDirPath);
+      refreshTreeFromState();
+      setDocStatus('目录创建成功: ' + targetDirPath, 'success');
+    } catch (error) {
+      console.error(error);
+      setDocStatus('新建目录失败: ' + error.message, 'error');
     }
   }
 
@@ -878,14 +1274,23 @@
         var dirPrefix = trimSlashes(selectedNodePath);
         var dirTargets = markdownPaths.filter(function (path) {
           return path.indexOf(dirPrefix + '/') === 0;
-        });
+        }).concat(directoryMarkerPaths.filter(function (path) {
+          return path.indexOf(dirPrefix + '/') === 0;
+        }));
 
         if (!dirTargets.length) {
-          setDocStatus('该目录下没有 Markdown 文件可删除。', 'error');
+          var directMarker = dirPrefix + '/' + directoryMarkerName;
+          if (directoryMarkerPaths.indexOf(directMarker) !== -1) {
+            dirTargets.push(directMarker);
+          }
+        }
+
+        if (!dirTargets.length) {
+          setDocStatus('该目录下没有可删除内容。', 'error');
           return;
         }
 
-        if (!window.confirm('确认删除目录 ' + dirPrefix + ' 下的 ' + dirTargets.length + ' 个 Markdown 文件吗？')) {
+        if (!window.confirm('确认删除目录 ' + dirPrefix + ' 下的 ' + dirTargets.length + ' 个项目吗？')) {
           return;
         }
 
@@ -898,16 +1303,20 @@
         }
 
         if (currentDocPath && currentDocPath.indexOf(dirPrefix + '/') === 0) {
-          currentDocPath = '';
-          currentDocSha = '';
-          markdownEl.value = '';
-          previewBodyEl.innerHTML = '';
+          clearEditorState();
         }
 
+        markdownPaths = markdownPaths.filter(function (path) {
+          return path.indexOf(dirPrefix + '/') !== 0;
+        });
+        directoryMarkerPaths = directoryMarkerPaths.filter(function (path) {
+          return path.indexOf(dirPrefix + '/') !== 0 && path !== dirPrefix + '/' + directoryMarkerName;
+        });
+
         setSelectedDirectory(dirname(dirPrefix) || 'posts');
-        await listMarkdownDocs();
+        refreshTreeFromState();
         setDocStatus('目录删除完成: ' + dirPrefix, 'success');
-        setStatus('目录下 Markdown 已删除。', 'success');
+        setStatus('目录内容已删除。', 'success');
         return;
       }
 
@@ -932,15 +1341,15 @@
 
       await deleteFile(context.owner, context.repo, context.branch, targetPath, sha, context.token, 'docs: delete ' + targetPath);
       if (currentDocPath === targetPath) {
-        currentDocPath = '';
-        currentDocSha = '';
+        clearEditorState();
       }
+      markdownPaths = markdownPaths.filter(function (path) {
+        return path !== targetPath;
+      });
       selectedNodeType = 'dir';
       selectedNodePath = selectedDirPath;
       docPathEl.value = selectedDirPath + '/';
-      markdownEl.value = '';
-      previewBodyEl.innerHTML = '';
-      await listMarkdownDocs();
+      refreshTreeFromState();
       setDocStatus('删除成功: ' + targetPath, 'success');
       setStatus('Markdown 文档已删除。', 'success');
     } catch (error) {
@@ -1010,7 +1419,12 @@
           setSelectedFile(newFilePath);
         }
 
-        await listMarkdownDocs();
+        markdownPaths = markdownPaths.map(function (path) {
+          return path === oldFilePath ? newFilePath : path;
+        }).sort(function (a, b) {
+          return a.localeCompare(b);
+        });
+        refreshTreeFromState();
         setDocStatus('重命名成功: ' + newFilePath, 'success');
         return;
       }
@@ -1036,9 +1450,11 @@
 
       var moveTargets = markdownPaths.filter(function (path) {
         return path.indexOf(oldDirPath + '/') === 0;
-      });
+      }).concat(directoryMarkerPaths.filter(function (path) {
+        return path.indexOf(oldDirPath + '/') === 0;
+      }));
       if (!moveTargets.length) {
-        setDocStatus('目录下没有 Markdown 文件可重命名。', 'error');
+        setDocStatus('目录下没有可重命名内容。', 'error');
         return;
       }
 
@@ -1068,8 +1484,20 @@
         }
       }
 
+      markdownPaths = markdownPaths.map(function (path) {
+        return path.indexOf(oldDirPath + '/') === 0
+          ? replacePathPrefix(path, oldDirPath, newDirPath)
+          : path;
+      }).sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+      directoryMarkerPaths = directoryMarkerPaths.map(function (path) {
+        return path.indexOf(oldDirPath + '/') === 0
+          ? replacePathPrefix(path, oldDirPath, newDirPath)
+          : path;
+      });
       setSelectedDirectory(newDirPath);
-      await listMarkdownDocs();
+      refreshTreeFromState();
       setDocStatus('目录重命名成功: ' + newDirPath, 'success');
     } catch (error) {
       console.error(error);
@@ -1093,6 +1521,12 @@
       '    var value = String(url || "").trim();',
       '    if (!value) return "";',
       '    return value.charAt(0) === "/" ? value : "/" + value;',
+      '  }',
+      '  function withVersion(url, version) {',
+      '    var base = normalizeUrl(url);',
+      '    var v = String(version || "").trim();',
+      '    if (!base || !v) return base;',
+      '    return base + (base.indexOf("?") === -1 ? "?" : "&") + "v=" + encodeURIComponent(v);',
       '  }',
       '  function parseDate(input) {',
       '    var d = new Date(input || "");',
@@ -1118,18 +1552,14 @@
       '  function patchHome(posts) {',
       '    var root = document.querySelector(".main-inner.index.posts-expand");',
       '    if (!root) return;',
-      '    var seen = {};',
-      '    var links = root.querySelectorAll("a.post-title-link");',
-      '    for (var i = 0; i < links.length; i++) {',
-      '      var href = normalizeUrl(links[i].getAttribute("href") || "");',
-      '      if (href) seen[href] = true;',
+      '    var blocks = root.querySelectorAll(".post-block");',
+      '    for (var i = 0; i < blocks.length; i++) {',
+      '      blocks[i].remove();',
       '    }',
-      '    var anchor = root.querySelector(".post-block");',
-      '    if (!anchor) return;',
       '    var ordered = sorted(posts);',
-      '    for (var j = ordered.length - 1; j >= 0; j--) {',
+      '    for (var j = 0; j < ordered.length; j++) {',
       '      var post = ordered[j];',
-      '      if (!post.date || seen[post.url]) continue;',
+      '      if (!post.date || !post.url) continue;',
       '      var block = document.createElement("div");',
       '      block.className = "post-block";',
       '      block.style.visibility = "visible";',
@@ -1143,8 +1573,7 @@
       '        descendants[n].style.opacity = "1";',
       '        descendants[n].style.transform = "none";',
       '      }',
-      '      root.insertBefore(block, anchor);',
-      '      seen[post.url] = true;',
+      '      root.appendChild(block);',
       '    }',
       '  }',
       '  function patchArchives(posts) {',
@@ -1195,28 +1624,29 @@
     ].join('\n');
   }
 
-  async function ensurePublisherFeedInjected(owner, repo, branch, token) {
+  async function ensurePublisherFeedInjected(owner, repo, branch, token, deployVersion) {
     function ensureEditorEntryInjected(html) {
-      var output = String(html || '');
-      var menuEntry = '<li class="menu-item menu-item-editor"><a href="/editor.html" rel="section"><i class="fa fa-user-lock fa-fw"></i>后台登录</a></li>';
-      if (output.indexOf('menu-item-editor') === -1) {
-        output = output.replace(/(<ul[^>]*class=["'][^"']*main-menu[^"']*menu[^"']*["'][^>]*>)([\s\S]*?)(<\/ul>)/i, function (_m, start, body, end) {
-          return start + body + menuEntry + end;
-        });
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(String(html || ''), 'text/html');
+      var staleMenuEntry = doc.querySelector('.menu-item-editor');
+      if (staleMenuEntry) {
+        staleMenuEntry.remove();
       }
 
       var authorEntry = '<span class="links-of-author-item">\n          <a href="/editor.html" title="后台登录">后台登录</a>\n        </span>';
-      if (output.indexOf('title="后台登录"') === -1) {
-        output = output.replace(/(<div class="links-of-author animated">[\s\S]*?)(<\/div>)/i, function (_m, body, end) {
-          return body + '\n        ' + authorEntry + '\n  ' + end;
-        });
+      var authorLinks = doc.querySelector('.links-of-author.animated');
+      if (authorLinks && authorLinks.querySelector('a[title="后台登录"]') === null) {
+        authorLinks.insertAdjacentHTML('beforeend', authorEntry);
       }
 
-      return output;
+      applyNoCacheMeta(doc);
+      applyVersionToStaticAssets(doc, deployVersion);
+
+      return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
     }
 
     var scriptPath = 'js/publisher-feed.js';
-    var scriptVersion = Date.now();
+    var scriptVersion = deployVersion || String(Date.now());
     var scriptSrc = '/js/publisher-feed.js?v=' + scriptVersion;
     await upsertFile(owner, repo, branch, scriptPath, buildPublisherFeedScript(), token, 'chore: update publisher feed script');
 
@@ -1261,50 +1691,274 @@
     }
   }
 
-  function buildArticleHtml(title, htmlContent, dateText) {
+  async function readLocalPostsManifest() {
+    try {
+      var raw = await fetchLocalAssetText('blog-data/posts.json');
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.warn('读取本地文章清单失败:', error);
+      return [];
+    }
+  }
+
+  function sortPostsForNavigation(posts) {
+    return posts.slice().sort(function (a, b) {
+      var aTime = Date.parse(a && a.publishedAt || '') || 0;
+      var bTime = Date.parse(b && b.publishedAt || '') || 0;
+      if (aTime !== bTime) {
+        return aTime - bTime;
+      }
+      return String(a && a.url || '').localeCompare(String(b && b.url || ''));
+    });
+  }
+
+  function buildPostNavHtml(previousPost, nextPost) {
+    function navLink(post, rel, isPrevious) {
+      if (!post || !post.url) {
+        return '';
+      }
+
+      var href = appendVersionToUrl(post.url, post.version || '');
+      var icon = isPrevious ? '<i class="fa fa-angle-left"></i> ' : ' <i class="fa fa-angle-right"></i>';
+      var label = isPrevious
+        ? icon + post.title
+        : post.title + icon;
+      return '<a href="' + href + '" rel="' + rel + '" title="' + post.title + '">' + label + '</a>';
+    }
+
     return [
-      '<!DOCTYPE html>',
-      '<html>',
-      '<head>',
-      '  <meta charset="utf-8">',
-      '  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">',
-      '  <title>' + title + '</title>',
-      '  <link rel="stylesheet" href="/css/main.css">',
-      '</head>',
-      '<body>',
-      '  <div id="container">',
-      '    <div id="wrap">',
-      '      <header id="header">',
-      '        <div id="header-outer" class="outer">',
-      '          <div id="header-title" class="inner">',
-      '            <h1 id="logo-wrap"><a href="/" id="logo">Hexo</a></h1>',
-      '          </div>',
-      '        </div>',
-      '      </header>',
-      '      <div class="outer">',
-      '        <section id="main">',
-      '          <article class="article article-type-post">',
-      '            <div class="article-meta"><span class="article-date">' + dateText + '</span></div>',
-      '            <div class="article-inner">',
-      '              <header class="article-header">',
-      '                <h1 class="article-title">' + title + '</h1>',
-      '              </header>',
-      '              <div class="article-entry">' + htmlContent + '</div>',
-      '            </div>',
-      '          </article>',
-      '        </section>',
-      '      </div>',
-      '    </div>',
-      '  </div>',
-      '</body>',
-      '</html>'
-    ].join('\n');
+      '<div class="post-nav">',
+      '  <div class="post-nav-item">' + navLink(previousPost, 'prev', true) + '</div>',
+      '  <div class="post-nav-item">' + navLink(nextPost, 'next', false) + '</div>',
+      '</div>'
+    ].join('');
+  }
+
+  function getArticleTemplateCandidates(selectedDocPath, htmlPath) {
+    var candidates = [];
+
+    function pushCandidate(path) {
+      if (!path || candidates.indexOf(path) !== -1 || path === htmlPath || !isPublishedHtmlPath(path)) {
+        return;
+      }
+      candidates.push(path);
+    }
+
+    pushCandidate(selectedDocPath);
+
+    for (var i = 0; i < allDocPaths.length; i++) {
+      pushCandidate(allDocPaths[i]);
+    }
+
+    pushCandidate('2024/09/14/spring技术内幕/index.html');
+    pushCandidate('2024/09/07/spring-boot/index.html');
+    return candidates;
+  }
+
+  async function getArticleTemplateHtml(selectedDocPath, htmlPath) {
+    var candidates = getArticleTemplateCandidates(selectedDocPath, htmlPath);
+    for (var i = 0; i < candidates.length; i++) {
+      try {
+        return await fetchLocalAssetText(candidates[i]);
+      } catch (error) {
+        console.warn('读取文章模板失败:', candidates[i], error);
+      }
+    }
+    return null;
+  }
+
+  async function buildArticleHtml(title, htmlContent, dateText, htmlPath, selectedDocPath, deployVersion) {
+    var templateHtml = await getArticleTemplateHtml(selectedDocPath, htmlPath);
+    if (!templateHtml) {
+      throw new Error('未找到可复用的旧博客文章模板，无法生成旧样式页面。');
+    }
+
+    var manifestPosts = await readLocalPostsManifest();
+
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(templateHtml, 'text/html');
+    var pathWithoutIndex = htmlPath.replace(/index\.html$/i, '');
+    var mainConfigNode = doc.querySelector('.next-config[data-name="main"]');
+    var hostname = 'kxkcx.github.io';
+
+    if (mainConfigNode) {
+      try {
+        hostname = JSON.parse(mainConfigNode.textContent || '{}').hostname || hostname;
+      } catch (error) {
+        console.warn('读取主配置失败:', error);
+      }
+    }
+
+    var canonicalUrl = 'https://' + hostname + '/' + pathWithoutIndex;
+    var isoPublished = dateText + 'T00:00:00.000Z';
+    var displayTime = dateText + ' 00:00:00';
+    var excerpt = buildExcerptFromMarkdown(markdownEl.value || '', 160);
+    var currentArticleUrl = '/' + htmlPath;
+
+    doc.documentElement.lang = 'zh-CN';
+    if (doc.title !== undefined) {
+      doc.title = title + ' | coderkou';
+    }
+
+    applyNoCacheMeta(doc);
+    applyVersionToStaticAssets(doc, deployVersion);
+
+    var selectors = {
+      description: 'meta[name="description"]',
+      ogTitle: 'meta[property="og:title"]',
+      ogUrl: 'meta[property="og:url"]',
+      ogDescription: 'meta[property="og:description"]',
+      articlePublished: 'meta[property="article:published_time"]',
+      articleModified: 'meta[property="article:modified_time"]',
+      canonical: 'link[rel="canonical"]'
+    };
+
+    var descNode = doc.querySelector(selectors.description);
+    if (descNode) {
+      descNode.setAttribute('content', excerpt);
+    }
+    var ogTitleNode = doc.querySelector(selectors.ogTitle);
+    if (ogTitleNode) {
+      ogTitleNode.setAttribute('content', title);
+    }
+    var ogUrlNode = doc.querySelector(selectors.ogUrl);
+    if (ogUrlNode) {
+      ogUrlNode.setAttribute('content', canonicalUrl + 'index.html');
+    }
+    var ogDescriptionNode = doc.querySelector(selectors.ogDescription);
+    if (ogDescriptionNode) {
+      ogDescriptionNode.setAttribute('content', excerpt);
+    }
+    var articlePublishedNode = doc.querySelector(selectors.articlePublished);
+    if (articlePublishedNode) {
+      articlePublishedNode.setAttribute('content', isoPublished);
+    }
+    var articleModifiedNode = doc.querySelector(selectors.articleModified);
+    if (articleModifiedNode) {
+      articleModifiedNode.setAttribute('content', isoPublished);
+    }
+    var canonicalNode = doc.querySelector(selectors.canonical);
+    if (canonicalNode) {
+      canonicalNode.setAttribute('href', canonicalUrl);
+    }
+
+    var pageConfigNode = doc.querySelector('.next-config[data-name="page"]');
+    if (pageConfigNode) {
+      pageConfigNode.textContent = JSON.stringify({
+        sidebar: '',
+        isHome: false,
+        isPost: true,
+        lang: 'zh-CN',
+        comments: true,
+        permalink: canonicalUrl,
+        path: pathWithoutIndex,
+        title: title
+      });
+    }
+
+    var mainEntity = doc.querySelector('link[itemprop="mainEntityOfPage"]');
+    if (mainEntity) {
+      mainEntity.setAttribute('href', canonicalUrl);
+    }
+
+    var postNameMeta = doc.querySelector('span[itemprop="post"] meta[itemprop="name"]');
+    if (postNameMeta) {
+      postNameMeta.setAttribute('content', title + ' | coderkou');
+    }
+    var postDescriptionMeta = doc.querySelector('span[itemprop="post"] meta[itemprop="description"]');
+    if (postDescriptionMeta) {
+      postDescriptionMeta.setAttribute('content', excerpt);
+    }
+
+    var postTitleNode = doc.querySelector('.post-title');
+    if (postTitleNode) {
+      postTitleNode.textContent = title;
+    }
+
+    var articleNode = doc.querySelector('article.post-content');
+    if (articleNode) {
+      articleNode.setAttribute('lang', 'zh-CN');
+    }
+
+    var timeNode = doc.querySelector('time[itemprop="dateCreated datePublished"]');
+    if (timeNode) {
+      timeNode.setAttribute('datetime', dateText + 'T00:00:00+08:00');
+      timeNode.setAttribute('title', '创建时间：' + displayTime + ' / 修改时间：' + displayTime);
+      timeNode.textContent = dateText;
+    }
+
+    var bodyNode = doc.querySelector('.post-body');
+    if (bodyNode) {
+      bodyNode.innerHTML = htmlContent;
+    }
+
+    var sidebarInner = doc.querySelector('.sidebar-inner');
+    if (sidebarInner) {
+      sidebarInner.className = 'sidebar-inner sidebar-overview-active';
+    }
+
+    var tocWrap = doc.querySelector('.post-toc-wrap.sidebar-panel');
+    if (tocWrap) {
+      tocWrap.innerHTML = '';
+    }
+
+    var postNav = doc.querySelector('.post-nav');
+    if (postNav) {
+      postNav.remove();
+    }
+
+    var navPosts = manifestPosts.filter(function (item) {
+      return item && item.url && item.url !== currentArticleUrl;
+    });
+    navPosts.push({
+      title: title,
+      url: currentArticleUrl,
+      version: deployVersion,
+      publishedAt: dateText + 'T00:00:00Z'
+    });
+    navPosts = sortPostsForNavigation(navPosts);
+
+    var currentIndex = -1;
+    for (var i = 0; i < navPosts.length; i++) {
+      if (navPosts[i].url === currentArticleUrl) {
+        currentIndex = i;
+        break;
+      }
+    }
+
+    var previousPost = currentIndex > 0 ? navPosts[currentIndex - 1] : null;
+    var nextPost = currentIndex >= 0 && currentIndex < navPosts.length - 1 ? navPosts[currentIndex + 1] : null;
+    var postFooter = doc.querySelector('.post-footer');
+    if (!postFooter) {
+      postFooter = doc.createElement('footer');
+      postFooter.className = 'post-footer';
+      articleNode.appendChild(postFooter);
+    }
+
+    if (previousPost || nextPost) {
+      postFooter.innerHTML = buildPostNavHtml(previousPost, nextPost);
+    } else {
+      postFooter.remove();
+    }
+
+    var poweredBy = doc.querySelector('.powered-by');
+    if (poweredBy) {
+      poweredBy.remove();
+    }
+
+    return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
   }
 
   async function deploy() {
     try {
       if (!isAuthenticated()) {
         setStatus('请先登录后台账号。', 'error');
+        return;
+      }
+
+      if (!compiledPayload || compileDirty) {
+        setStatus('请先点击“编译”，确认网页结果后再部署。', 'error');
         return;
       }
 
@@ -1319,29 +1973,15 @@
         return;
       }
 
-      var markdown = markdownEl.value || '';
-      var title = titleEl.value.trim();
-      var selectedDocPath = String(docPathEl.value || '').trim();
-
-      if (!markdown.trim() && selectedDocPath && (isMarkdownPath(selectedDocPath) || isPublishedHtmlPath(selectedDocPath))) {
-        var existingDoc = await readTextFile(owner, repo, branch, selectedDocPath, token);
-        if (existingDoc && existingDoc.content) {
-          markdown = isPublishedHtmlPath(selectedDocPath)
-            ? htmlArticleToMarkdown(existingDoc.content, selectedDocPath)
-            : existingDoc.content;
-          markdownEl.value = markdown;
-        }
-      }
-
-      if (!title) {
-        title = titleFromMarkdown(markdown, selectedDocPath || currentDocPath || '');
-        titleEl.value = title;
-      }
-
-      if (!markdown.trim()) {
-        markdown = '# ' + title + '\n\n';
-        markdownEl.value = markdown;
-      }
+      var payload = compiledPayload;
+      var title = payload.title;
+      var selectedDocPath = payload.selectedDocPath;
+      var markdownPath = payload.markdownPath;
+      var articleUrl = payload.articleUrl;
+      var excerpt = payload.excerpt;
+      var articleHtml = payload.articleHtml;
+      var markdownWithMeta = payload.markdownWithMeta;
+      var htmlPath = payload.htmlPath;
 
       setStatus('正在检查仓库写权限...', '');
       await assertRepoWritable(owner, repo, token);
@@ -1356,56 +1996,10 @@
       setStatus('正在同步后台页面资源...', '');
       await ensureEditorAssetsSynced(owner, repo, branch, token);
 
-      var slug = slugify(slugEl.value.trim() || title);
-      var now = new Date();
-      var year = String(now.getFullYear());
-      var month = String(now.getMonth() + 1).padStart(2, '0');
-      var day = String(now.getDate()).padStart(2, '0');
-
-      var postDocMatch = selectedDocPath.match(/^posts\/(\d{4})-(\d{2})-(\d{2})-(.+)\.md$/i);
-      if (postDocMatch) {
-        year = postDocMatch[1];
-        month = postDocMatch[2];
-        day = postDocMatch[3];
-        slug = slugify(postDocMatch[4]);
-      }
-
-      var publishedHtmlMatch = selectedDocPath.match(/^(\d{4})\/(\d{2})\/(\d{2})\/(.+)\/index\.html$/i);
-      if (publishedHtmlMatch) {
-        year = publishedHtmlMatch[1];
-        month = publishedHtmlMatch[2];
-        day = publishedHtmlMatch[3];
-        slug = slugify(publishedHtmlMatch[4]);
-      }
-      slugEl.value = slug;
-
-      var dateText = year + '-' + month + '-' + day;
-
-      setStatus('正在编译 Markdown...', '');
-      var htmlContent = marked.parse(markdown);
-      previewBodyEl.innerHTML = htmlContent;
-      if (previewPanel) {
-        previewPanel.open = true;
-      }
-
-      var htmlPath = year + '/' + month + '/' + day + '/' + slug + '/index.html';
-      var markdownPath = selectedDocPath && /\.md$/i.test(selectedDocPath)
-        ? selectedDocPath
-        : 'posts/' + dateText + '-' + slug + '.md';
       var manifestPath = 'blog-data/posts.json';
-      var articleUrl = '/' + htmlPath;
-      var excerpt = buildExcerptFromMarkdown(markdown, 180);
-
-      var markdownWithMeta = [
-        '# ' + title,
-        '',
-        '> 发布时间: ' + dateText,
-        '',
-        markdown
-      ].join('\n');
 
       setStatus('正在上传文章页面...', '');
-      await upsertFile(owner, repo, branch, htmlPath, buildArticleHtml(title, htmlContent, dateText), token, 'publish: ' + title + ' (html)');
+      await upsertFile(owner, repo, branch, htmlPath, articleHtml, token, 'publish: ' + title + ' (html)');
 
       setStatus('正在上传 Markdown 源文件...', '');
       await upsertFile(owner, repo, branch, markdownPath, markdownWithMeta, token, 'publish: ' + title + ' (markdown)');
@@ -1422,13 +2016,14 @@
       nextPosts.unshift({
         title: title,
         url: articleUrl,
-        publishedAt: dateText + 'T00:00:00Z',
+        version: payload.deployVersion,
+        publishedAt: payload.dateText + 'T00:00:00Z',
         excerpt: excerpt
       });
       await upsertFile(owner, repo, branch, manifestPath, JSON.stringify(nextPosts, null, 2) + '\n', token, 'publish: ' + title + ' (manifest)');
 
       setStatus('正在同步主页与归档原生样式...', '');
-      await ensurePublisherFeedInjected(owner, repo, branch, token);
+      await ensurePublisherFeedInjected(owner, repo, branch, token, payload.deployVersion);
 
       setStatus('部署成功，GitHub Pages 通常会在 1-2 分钟内更新。', 'success');
     } catch (error) {
@@ -1441,6 +2036,10 @@
     renderPreview();
     setStatus('已更新预览。', '');
   });
+
+  if (compileBtn) {
+    compileBtn.addEventListener('click', compileArticle);
+  }
 
   deployBtn.addEventListener('click', deploy);
 
@@ -1459,21 +2058,58 @@
     refreshDocsBtn.addEventListener('click', listMarkdownDocs);
   }
 
-  if (createDocBtn) {
-    createDocBtn.addEventListener('click', createMarkdownDoc);
+  if (contextCreateDocBtn) {
+    contextCreateDocBtn.addEventListener('click', function () {
+      hideTreeContextMenu();
+      createMarkdownDoc();
+    });
   }
 
-  if (saveDocBtn) {
-    saveDocBtn.addEventListener('click', saveMarkdownDoc);
+  if (contextCreateDirBtn) {
+    contextCreateDirBtn.addEventListener('click', function () {
+      hideTreeContextMenu();
+      createDirectory();
+    });
   }
 
-  if (deleteDocBtn) {
-    deleteDocBtn.addEventListener('click', deleteMarkdownDoc);
+  if (contextSaveDocBtn) {
+    contextSaveDocBtn.addEventListener('click', function () {
+      hideTreeContextMenu();
+      saveMarkdownDoc();
+    });
   }
 
-  if (renameDocBtn) {
-    renameDocBtn.addEventListener('click', renameSelectedNode);
+  if (contextDeleteDocBtn) {
+    contextDeleteDocBtn.addEventListener('click', function () {
+      hideTreeContextMenu();
+      deleteMarkdownDoc();
+    });
   }
+
+  if (contextRenameDocBtn) {
+    contextRenameDocBtn.addEventListener('click', function () {
+      hideTreeContextMenu();
+      renameSelectedNode();
+    });
+  }
+
+  if (docTreeEl) {
+    docTreeEl.addEventListener('contextmenu', function (event) {
+      if (event.target === docTreeEl) {
+        showTreeContextMenu(event, 'dir', selectedDirPath || 'posts');
+      }
+    });
+  }
+
+  document.addEventListener('click', function () {
+    hideTreeContextMenu();
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      hideTreeContextMenu();
+    }
+  });
 
   if (toggleSidebarBtn && workspaceGridEl) {
     toggleSidebarBtn.addEventListener('click', function () {
@@ -1487,13 +2123,21 @@
   });
 
   titleEl.addEventListener('input', function () {
+    markCompileDirty();
     if (!slugEl.value.trim()) {
       slugEl.value = slugify(titleEl.value);
     }
   });
 
+  slugEl.addEventListener('input', markCompileDirty);
+  markdownEl.addEventListener('input', function () {
+    markCompileDirty();
+    renderPreview();
+  });
+
   if (docPathEl) {
     docPathEl.addEventListener('change', function () {
+      markCompileDirty();
       var next = docPathEl.value.trim();
       currentDocSha = '';
       if (!next) {
