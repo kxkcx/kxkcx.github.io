@@ -128,6 +128,9 @@
   var docStatusEl = document.getElementById('docStatus');
   var refreshDocsBtn = document.getElementById('refreshDocsBtn');
   var selectedNodeEl = document.getElementById('selectedNode');
+  var publishedDocListEl = document.getElementById('publishedDocList');
+  var publishedStatusEl = document.getElementById('publishedStatus');
+  var publishedCountEl = document.getElementById('publishedCount');
   var treeContextMenuEl = document.getElementById('treeContextMenu');
   var contextCreateDocBtn = document.getElementById('contextCreateDocBtn');
   var contextCreateDirBtn = document.getElementById('contextCreateDirBtn');
@@ -142,6 +145,7 @@
   var markdownPaths = [];
   var allDocPaths = [];
   var publishedHtmlPaths = [];
+  var publishedPostMetaByPath = {};
   var directoryPaths = [];
   var directoryMarkerPaths = [];
   var compiledPayload = null;
@@ -160,6 +164,14 @@
     }
     docStatusEl.textContent = message;
     docStatusEl.className = 'status' + (type ? ' ' + type : '');
+  }
+
+  function setPublishedStatus(message, type) {
+    if (!publishedStatusEl) {
+      return;
+    }
+    publishedStatusEl.textContent = message;
+    publishedStatusEl.className = 'status' + (type ? ' ' + type : '');
   }
 
   function markCompileDirty() {
@@ -185,9 +197,17 @@
       return;
     }
 
+    var canCreate = selectedNodeType !== 'published';
     var canSave = selectedNodeType === 'file' && isMarkdownPath(selectedNodePath);
-    var canRename = selectedNodeType === 'dir' || (selectedNodeType === 'file' && isMarkdownPath(selectedNodePath));
-    var canDelete = selectedNodeType === 'dir' || (selectedNodeType === 'file' && isMarkdownPath(selectedNodePath));
+    var canRename = selectedNodeType === 'dir' || (selectedNodeType === 'file' && isMarkdownPath(selectedNodePath)) || selectedNodeType === 'published';
+    var canDelete = selectedNodeType === 'dir' || (selectedNodeType === 'file' && isMarkdownPath(selectedNodePath)) || selectedNodeType === 'published';
+
+    if (contextCreateDocBtn) {
+      contextCreateDocBtn.disabled = !canCreate;
+    }
+    if (contextCreateDirBtn) {
+      contextCreateDirBtn.disabled = !canCreate;
+    }
 
     if (contextSaveDocBtn) {
       contextSaveDocBtn.disabled = !canSave;
@@ -209,6 +229,8 @@
 
     if (nodeType === 'file') {
       setSelectedFile(nodePath);
+    } else if (nodeType === 'published') {
+      setSelectedPublished(nodePath);
     } else {
       setSelectedDirectory(nodePath || 'posts');
     }
@@ -340,6 +362,25 @@
     }
     if (selectedNodeEl) {
       selectedNodeEl.textContent = '当前选中: 文件 ' + normalized;
+    }
+  }
+
+  function setSelectedPublished(path) {
+    var normalized = trimSlashes(path);
+    if (!normalized) {
+      return;
+    }
+    selectedNodeType = 'published';
+    selectedNodePath = normalized;
+    selectedDirPath = dirname(normalized) || selectedDirPath || 'posts';
+    if (selectedDirEl) {
+      selectedDirEl.textContent = '当前目录: ' + selectedDirPath;
+    }
+    if (docPathEl) {
+      docPathEl.value = normalized;
+    }
+    if (selectedNodeEl) {
+      selectedNodeEl.textContent = '当前选中: 已发布 ' + normalized;
     }
   }
 
@@ -798,6 +839,22 @@
     };
   }
 
+  async function getWritableRepoContext() {
+    var context = getRepoContext();
+    if (!context.owner || !context.repo || !context.token) {
+      return context;
+    }
+
+    var pagesBranch = await getPagesSourceBranch(context.owner, context.repo, context.token);
+    if (pagesBranch && pagesBranch !== context.branch) {
+      context.branch = pagesBranch;
+      branchEl.value = pagesBranch;
+      saveConfig();
+    }
+
+    return context;
+  }
+
   function buildTree(paths, dirs) {
     var root = { dirs: {}, files: [] };
     var dirList = Array.isArray(dirs) ? dirs.slice().sort(function (a, b) {
@@ -887,6 +944,62 @@
     return newPrefix + path.slice(oldPrefix.length);
   }
 
+  function getPublishedInfoFromMarkdownPath(markdownPath) {
+    var normalized = trimSlashes(markdownPath);
+    var fileName = basename(normalized);
+    var match = fileName.match(/^(\d{4})-(\d{2})-(\d{2})-(.+)\.md$/i);
+    if (!match) {
+      return null;
+    }
+
+    var year = match[1];
+    var month = match[2];
+    var day = match[3];
+    var slug = slugify(match[4]);
+    var htmlPath = year + '/' + month + '/' + day + '/' + slug + '/index.html';
+    return {
+      htmlPath: htmlPath,
+      articleUrl: '/' + htmlPath
+    };
+  }
+
+  async function deletePublishedArtifacts(context, markdownFilePaths) {
+    var manifestPath = 'blog-data/posts.json';
+    var articleUrls = [];
+
+    for (var i = 0; i < markdownFilePaths.length; i++) {
+      var info = getPublishedInfoFromMarkdownPath(markdownFilePaths[i]);
+      if (!info) {
+        continue;
+      }
+
+      articleUrls.push(info.articleUrl);
+      var htmlSha = await getFileSha(context.owner, context.repo, context.branch, info.htmlPath, context.token);
+      if (htmlSha) {
+        await deleteFile(context.owner, context.repo, context.branch, info.htmlPath, htmlSha, context.token, 'publish: delete ' + info.htmlPath);
+      }
+    }
+
+    if (!articleUrls.length) {
+      return;
+    }
+
+    var posts = await readJsonFile(context.owner, context.repo, context.branch, manifestPath, context.token);
+    var nextPosts = posts.filter(function (item) {
+      return articleUrls.indexOf(String(item && item.url || '')) === -1;
+    });
+
+    await upsertFile(
+      context.owner,
+      context.repo,
+      context.branch,
+      manifestPath,
+      JSON.stringify(nextPosts, null, 2) + '\n',
+      context.token,
+      'publish: remove deleted posts from manifest'
+    );
+  }
+
   function collectDirectoryPathsFromFiles(paths) {
     var dirMap = {};
     for (var i = 0; i < paths.length; i++) {
@@ -897,6 +1010,59 @@
       }
     }
     return Object.keys(dirMap);
+  }
+
+  function displayTitleFromPublishedPath(path) {
+    var meta = publishedPostMetaByPath[trimSlashes(path)];
+    if (meta && meta.title) {
+      return meta.title;
+    }
+    var parsed = parsePublishedHtmlMeta(path);
+    return parsed ? parsed.slug : basename(path);
+  }
+
+  function renderPublishedDocs(paths) {
+    if (!publishedDocListEl) {
+      return;
+    }
+
+    publishedDocListEl.innerHTML = '';
+    var items = (paths || []).slice().sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+
+    if (publishedCountEl) {
+      publishedCountEl.textContent = items.length + ' 篇';
+    }
+
+    for (var i = 0; i < items.length; i++) {
+      var path = items[i];
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'published-item' + (path === currentDocPath ? ' active' : '');
+      item.addEventListener('click', (function (targetPath) {
+        return function () {
+          loadMarkdownDoc(targetPath);
+        };
+      })(path));
+      item.addEventListener('contextmenu', (function (targetPath) {
+        return function (event) {
+          showTreeContextMenu(event, 'published', targetPath);
+        };
+      })(path));
+
+      var title = document.createElement('span');
+      title.className = 'published-item-title';
+      title.textContent = displayTitleFromPublishedPath(path);
+
+      var sub = document.createElement('span');
+      sub.className = 'published-item-path';
+      sub.textContent = path;
+
+      item.appendChild(title);
+      item.appendChild(sub);
+      publishedDocListEl.appendChild(item);
+    }
   }
 
   function renderDirNode(node, container, depth) {
@@ -1036,6 +1202,16 @@
           return node.path;
         });
 
+      var manifestPosts = await readJsonFile(context.owner, context.repo, context.branch, 'blog-data/posts.json', context.token);
+      var publishedMeta = {};
+      for (var p = 0; p < manifestPosts.length; p++) {
+        var item = manifestPosts[p];
+        var url = String(item && item.url || '').replace(/^\//, '');
+        if (url) {
+          publishedMeta[url] = item;
+        }
+      }
+
       var dirs = collectDirectoryPathsFromFiles(docs.concat(htmlDocs));
 
       for (var m = 0; m < markers.length; m++) {
@@ -1048,15 +1224,19 @@
       markdownPaths = docs;
       allDocPaths = docs;
       publishedHtmlPaths = htmlDocs;
+      publishedPostMetaByPath = publishedMeta;
       directoryMarkerPaths = markers;
       directoryPaths = dirs.sort(function (a, b) {
         return a.localeCompare(b);
       });
       renderDocTree(markdownPaths);
+      renderPublishedDocs(publishedHtmlPaths);
       setDocStatus('已加载 ' + docs.length + ' 个 Markdown 文档，' + htmlDocs.length + ' 个已发布 HTML 文档。', 'success');
+      setPublishedStatus('已加载 ' + htmlDocs.length + ' 个已发布博客。', 'success');
     } catch (error) {
       console.error(error);
       setDocStatus('加载文档列表失败: ' + error.message, 'error');
+      setPublishedStatus('加载已发布博客失败: ' + error.message, 'error');
     }
   }
 
@@ -1093,6 +1273,7 @@
       slugEl.value = slugFromPath(targetPath, titleEl.value);
       renderPreview();
       renderDocTree(allDocPaths);
+      renderPublishedDocs(publishedHtmlPaths);
       setDocStatus('已加载文档: ' + targetPath, 'success');
     } catch (error) {
       console.error(error);
@@ -1102,7 +1283,7 @@
 
   async function saveMarkdownDoc() {
     try {
-      var context = getRepoContext();
+      var context = await getWritableRepoContext();
       if (!context.owner || !context.repo || !context.token) {
         setDocStatus('请先填写 Owner、Repo、Token。', 'error');
         return;
@@ -1141,7 +1322,7 @@
 
   async function createMarkdownDoc() {
     try {
-      var context = getRepoContext();
+      var context = await getWritableRepoContext();
       if (!context.owner || !context.repo || !context.token) {
         setDocStatus('请先填写 Owner、Repo、Token。', 'error');
         return;
@@ -1216,7 +1397,7 @@
 
   async function createDirectory() {
     try {
-      var context = getRepoContext();
+      var context = await getWritableRepoContext();
       if (!context.owner || !context.repo || !context.token) {
         setDocStatus('请先填写 Owner、Repo、Token。', 'error');
         return;
@@ -1259,7 +1440,7 @@
 
   async function deleteMarkdownDoc() {
     try {
-      var context = getRepoContext();
+      var context = await getWritableRepoContext();
       if (!context.owner || !context.repo || !context.token) {
         setDocStatus('请先填写 Owner、Repo、Token。', 'error');
         return;
@@ -1272,6 +1453,9 @@
 
       if (selectedNodeType === 'dir') {
         var dirPrefix = trimSlashes(selectedNodePath);
+        var markdownDeleteTargets = markdownPaths.filter(function (path) {
+          return path.indexOf(dirPrefix + '/') === 0;
+        });
         var dirTargets = markdownPaths.filter(function (path) {
           return path.indexOf(dirPrefix + '/') === 0;
         }).concat(directoryMarkerPaths.filter(function (path) {
@@ -1301,6 +1485,8 @@
             await deleteFile(context.owner, context.repo, context.branch, itemPath, itemSha, context.token, 'docs: delete ' + itemPath);
           }
         }
+
+        await deletePublishedArtifacts(context, markdownDeleteTargets);
 
         if (currentDocPath && currentDocPath.indexOf(dirPrefix + '/') === 0) {
           clearEditorState();
@@ -1340,6 +1526,7 @@
       }
 
       await deleteFile(context.owner, context.repo, context.branch, targetPath, sha, context.token, 'docs: delete ' + targetPath);
+      await deletePublishedArtifacts(context, [targetPath]);
       if (currentDocPath === targetPath) {
         clearEditorState();
       }
@@ -1358,9 +1545,127 @@
     }
   }
 
+  async function renamePublishedBlog() {
+    try {
+      var context = await getWritableRepoContext();
+      if (!context.owner || !context.repo || !context.token) {
+        setPublishedStatus('请先填写 Owner、Repo、Token。', 'error');
+        return;
+      }
+
+      var targetPath = trimSlashes(selectedNodePath);
+      if (!isPublishedHtmlPath(targetPath)) {
+        setPublishedStatus('请先选择已发布博客。', 'error');
+        return;
+      }
+
+      var file = await readTextFile(context.owner, context.repo, context.branch, targetPath, context.token);
+      if (!file) {
+        setPublishedStatus('已发布博客不存在。', 'error');
+        return;
+      }
+
+      var currentTitle = displayTitleFromPublishedPath(targetPath);
+      var newTitleInput = window.prompt('重命名已发布博客标题', currentTitle);
+      if (newTitleInput === null) {
+        return;
+      }
+
+      var newTitle = String(newTitleInput || '').trim();
+      if (!newTitle) {
+        setPublishedStatus('标题不能为空。', 'error');
+        return;
+      }
+
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(file.content, 'text/html');
+      if (doc.title !== undefined) {
+        doc.title = newTitle + ' | coderkou';
+      }
+      var titleNode = doc.querySelector('.post-title');
+      if (titleNode) {
+        titleNode.textContent = newTitle;
+      }
+      var ogTitleNode = doc.querySelector('meta[property="og:title"]');
+      if (ogTitleNode) {
+        ogTitleNode.setAttribute('content', newTitle);
+      }
+      var postNameMeta = doc.querySelector('span[itemprop="post"] meta[itemprop="name"]');
+      if (postNameMeta) {
+        postNameMeta.setAttribute('content', newTitle + ' | coderkou');
+      }
+
+      await upsertFile(context.owner, context.repo, context.branch, targetPath, '<!DOCTYPE html>\n' + doc.documentElement.outerHTML, context.token, 'publish: rename title ' + targetPath);
+
+      var posts = await readJsonFile(context.owner, context.repo, context.branch, 'blog-data/posts.json', context.token);
+      for (var i = 0; i < posts.length; i++) {
+        if (String(posts[i] && posts[i].url || '') === '/' + targetPath) {
+          posts[i].title = newTitle;
+        }
+      }
+      await upsertFile(context.owner, context.repo, context.branch, 'blog-data/posts.json', JSON.stringify(posts, null, 2) + '\n', context.token, 'publish: update published title');
+
+      if (publishedPostMetaByPath[targetPath]) {
+        publishedPostMetaByPath[targetPath].title = newTitle;
+      }
+      if (currentDocPath === targetPath) {
+        titleEl.value = newTitle;
+      }
+      renderPublishedDocs(publishedHtmlPaths);
+      setPublishedStatus('已发布博客标题已更新。', 'success');
+    } catch (error) {
+      console.error(error);
+      setPublishedStatus('重命名已发布博客失败: ' + error.message, 'error');
+    }
+  }
+
+  async function deletePublishedBlog() {
+    try {
+      var context = await getWritableRepoContext();
+      if (!context.owner || !context.repo || !context.token) {
+        setPublishedStatus('请先填写 Owner、Repo、Token。', 'error');
+        return;
+      }
+
+      var targetPath = trimSlashes(selectedNodePath);
+      if (!isPublishedHtmlPath(targetPath)) {
+        setPublishedStatus('请先选择已发布博客。', 'error');
+        return;
+      }
+
+      if (!window.confirm('确认删除已发布博客: ' + targetPath + ' ?')) {
+        return;
+      }
+
+      var htmlSha = await getFileSha(context.owner, context.repo, context.branch, targetPath, context.token);
+      if (htmlSha) {
+        await deleteFile(context.owner, context.repo, context.branch, targetPath, htmlSha, context.token, 'publish: delete ' + targetPath);
+      }
+
+      var posts = await readJsonFile(context.owner, context.repo, context.branch, 'blog-data/posts.json', context.token);
+      var nextPosts = posts.filter(function (item) {
+        return String(item && item.url || '') !== '/' + targetPath;
+      });
+      await upsertFile(context.owner, context.repo, context.branch, 'blog-data/posts.json', JSON.stringify(nextPosts, null, 2) + '\n', context.token, 'publish: remove published blog');
+
+      publishedHtmlPaths = publishedHtmlPaths.filter(function (path) {
+        return path !== targetPath;
+      });
+      delete publishedPostMetaByPath[targetPath];
+      if (currentDocPath === targetPath) {
+        clearEditorState();
+      }
+      renderPublishedDocs(publishedHtmlPaths);
+      setPublishedStatus('已发布博客已删除。', 'success');
+    } catch (error) {
+      console.error(error);
+      setPublishedStatus('删除已发布博客失败: ' + error.message, 'error');
+    }
+  }
+
   async function renameSelectedNode() {
     try {
-      var context = getRepoContext();
+      var context = await getWritableRepoContext();
       if (!context.owner || !context.repo || !context.token) {
         setDocStatus('请先填写 Owner、Repo、Token。', 'error');
         return;
@@ -2082,14 +2387,22 @@
   if (contextDeleteDocBtn) {
     contextDeleteDocBtn.addEventListener('click', function () {
       hideTreeContextMenu();
-      deleteMarkdownDoc();
+      if (selectedNodeType === 'published') {
+        deletePublishedBlog();
+      } else {
+        deleteMarkdownDoc();
+      }
     });
   }
 
   if (contextRenameDocBtn) {
     contextRenameDocBtn.addEventListener('click', function () {
       hideTreeContextMenu();
-      renameSelectedNode();
+      if (selectedNodeType === 'published') {
+        renamePublishedBlog();
+      } else {
+        renameSelectedNode();
+      }
     });
   }
 
