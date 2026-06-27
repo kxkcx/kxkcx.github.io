@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>后台编译部署</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/editor.css">
+</head>
+<body>
+  <div class="auth-shell" id="authShell">
+    <div class="auth-card">
+      <h1>后台登录</h1>
+      <p>默认不登录。输入账号后可进入编译部署页面。</p>
+      <label>账号
+        <input id="loginUser" type="text" placeholder="vesper" autocomplete="username">
+      </label>
+      <label>密码
+        <input id="loginPass" type="password" placeholder="vesper" autocomplete="current-password">
+      </label>
+      <div class="actions">
+        <button id="loginBtn" type="button" class="primary">登录</button>
+      </div>
+      <p id="loginStatus" class="status">未登录</p>
+    </div>
+  </div>
+
+  <div class="editor-shell" id="editorShell" style="display:none;">
+    <header class="editor-header card">
+      <div>
+        <h1><a href="/" class="title-home-link">Markdown 发布台</a></h1>
+        <p>左侧管理文档，右侧编辑与预览。支持新建、编辑、删除现有 Markdown。</p>
+      </div>
+      <div class="header-actions">
+        <button id="toggleSidebarBtn" type="button">展开侧边栏</button>
+        <button id="logoutBtn" type="button">退出登录</button>
+      </div>
+    </header>
+
+    <section class="card config-card">
+      <details id="githubConfigDetails">
+        <summary>GitHub 配置（点击展开）</summary>
+        <div class="grid two">
+          <label>Owner
+            <input id="owner" type="text" placeholder="例如: kxkcx">
+          </label>
+          <label>Repo
+            <input id="repo" type="text" placeholder="例如: kxkcx.github.io">
+          </label>
+          <label>Branch
+            <input id="branch" type="text" value="master">
+          </label>
+          <label>Token
+            <input id="token" type="password" placeholder="GitHub PAT (repo 权限)">
+          </label>
+        </div>
+        <div class="actions">
+          <button id="tokenHelpBtn" type="button">获取 Token（官方）</button>
+          <button id="verifyTokenBtn" type="button">验证 Token</button>
+        </div>
+        <p class="tip">Token 仅保存在浏览器本地，不会发送到除 GitHub API 之外的地址。</p>
+      </details>
+    </section>
+
+    <section class="workspace-grid sidebar-collapsed" id="workspaceGrid">
+      <aside class="card left-pane">
+        <h2>Markdown 文档</h2>
+        <input id="docPath" type="text" class="hidden-input" aria-hidden="true" tabindex="-1">
+        <div class="tree-header">
+          <strong>目录树</strong>
+          <span id="selectedDir">当前目录: posts</span>
+        </div>
+        <div class="tree-toolbar">
+          <button id="refreshDocsBtn" type="button">刷新</button>
+          <button id="createDocBtn" type="button">新建</button>
+          <button id="saveDocBtn" type="button">保存</button>
+          <button id="renameDocBtn" type="button">重命名</button>
+          <button id="deleteDocBtn" type="button">删除</button>
+        </div>
+        <p id="selectedNode" class="tree-selected">当前选中: 目录 posts</p>
+        <div id="docTree" class="doc-tree"></div>
+        <p id="docStatus" class="status">未加载文档列表。</p>
+      </aside>
+
+      <div class="right-pane">
+        <section class="editor-content card">
+          <h2>编辑区</h2>
+          <div class="grid two">
+            <label>标题
+              <input id="title" type="text" placeholder="文章标题">
+            </label>
+            <label>Slug
+              <input id="slug" type="text" placeholder="留空自动生成，例如 my-first-post">
+            </label>
+          </div>
+          <label>Markdown
+            <textarea id="markdown" rows="18" placeholder="# 这里开始写作\n\n支持标准 Markdown。"></textarea>
+          </label>
+          <div class="actions">
+            <button id="previewBtn" type="button">预览</button>
+            <button id="deployBtn" type="button" class="primary">编译并部署</button>
+          </div>
+          <p id="status" class="status">等待操作...</p>
+        </section>
+
+        <details class="preview card" id="previewPanel">
+          <summary>预览（默认折叠）</summary>
+          <article id="previewBody" class="article-entry"></article>
+        </details>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="/js/editor.js"></script>
+</body>
+</html>
