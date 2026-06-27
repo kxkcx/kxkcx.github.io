@@ -72,10 +72,6 @@
         </div>
         <div class="tree-toolbar">
           <button id="refreshDocsBtn" type="button">刷新</button>
-          <button id="createDocBtn" type="button">新建</button>
-          <button id="saveDocBtn" type="button">保存</button>
-          <button id="renameDocBtn" type="button">重命名</button>
-          <button id="deleteDocBtn" type="button">删除</button>
         </div>
         <p id="selectedNode" class="tree-selected">当前选中: 目录 posts</p>
         <div id="docTree" class="doc-tree"></div>
@@ -98,7 +94,8 @@
           </label>
           <div class="actions">
             <button id="previewBtn" type="button">预览</button>
-            <button id="deployBtn" type="button" class="primary">编译并部署</button>
+            <button id="compileBtn" type="button">编译</button>
+            <button id="deployBtn" type="button" class="primary">部署</button>
           </div>
           <p id="status" class="status">等待操作...</p>
         </section>
@@ -109,6 +106,14 @@
         </details>
       </div>
     </section>
+  </div>
+
+  <div id="treeContextMenu" class="tree-context-menu" hidden>
+    <button id="contextCreateDocBtn" type="button">新建文件</button>
+    <button id="contextCreateDirBtn" type="button">新建目录</button>
+    <button id="contextSaveDocBtn" type="button">保存</button>
+    <button id="contextRenameDocBtn" type="button">重命名</button>
+    <button id="contextDeleteDocBtn" type="button">删除</button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
