@@ -1190,6 +1190,25 @@
   }
 
   async function ensurePublisherFeedInjected(owner, repo, branch, token) {
+    function ensureEditorEntryInjected(html) {
+      var output = String(html || '');
+      var menuEntry = '<li class="menu-item menu-item-editor"><a href="/editor.html" rel="section"><i class="fa fa-user-lock fa-fw"></i>后台登录</a></li>';
+      if (output.indexOf('menu-item-editor') === -1) {
+        output = output.replace(/(<ul[^>]*class=["'][^"']*main-menu[^"']*menu[^"']*["'][^>]*>)([\s\S]*?)(<\/ul>)/i, function (_m, start, body, end) {
+          return start + body + menuEntry + end;
+        });
+      }
+
+      var authorEntry = '<span class="links-of-author-item">\n          <a href="/editor.html" title="后台登录">后台登录</a>\n        </span>';
+      if (output.indexOf('title="后台登录"') === -1) {
+        output = output.replace(/(<div class="links-of-author animated">[\s\S]*?)(<\/div>)/i, function (_m, body, end) {
+          return body + '\n        ' + authorEntry + '\n  ' + end;
+        });
+      }
+
+      return output;
+    }
+
     var scriptPath = 'js/publisher-feed.js';
     var scriptVersion = Date.now();
     var scriptSrc = '/js/publisher-feed.js?v=' + scriptVersion;
@@ -1203,7 +1222,7 @@
         continue;
       }
       var scriptTagPattern = /<script[^>]*src=["']\/js\/publisher-feed\.js(?:\?[^"']*)?["'][^>]*><\/script>/i;
-      var updated = file.content;
+      var updated = ensureEditorEntryInjected(file.content);
 
       if (scriptTagPattern.test(updated)) {
         updated = updated.replace(scriptTagPattern, '<script src="' + scriptSrc + '"></script>');
