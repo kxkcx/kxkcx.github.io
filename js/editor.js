@@ -44,6 +44,12 @@
     if (editorShell) {
       editorShell.style.display = 'none';
     }
+    if (loginUserEl) {
+      loginUserEl.value = '';
+    }
+    if (loginPassEl) {
+      loginPassEl.value = '';
+    }
   }
 
   function handleLogin() {
