@@ -20,13 +20,7 @@
     if (!loginStatusEl) {
       return;
     }
-    loginStatusEl.textContent = message;
-        '  function withVersion(url, version) {',
-        '    var base = normalizeUrl(url);',
-        '    var v = String(version || "").trim();',
-        '    if (!base || !v) return base;',
-        '    return base + (base.indexOf("?") === -1 ? "?" : "&") + "v=" + encodeURIComponent(v);',
-        '  }',
+    loginStatusEl.textContent = message;
     loginStatusEl.className = 'status' + (type ? ' ' + type : '');
   }
 
@@ -111,6 +105,9 @@
   var tokenEl = document.getElementById('token');
   var titleEl = document.getElementById('title');
   var slugEl = document.getElementById('slug');
+  var publishDateEl = document.getElementById('publishDate');
+  var categoryEl = document.getElementById('category');
+  var tagsEl = document.getElementById('tags');
   var markdownEl = document.getElementById('markdown');
   var statusEl = document.getElementById('status');
   var previewBodyEl = document.getElementById('previewBody');
@@ -442,6 +439,89 @@
       .replace(/^-+|-+$/g, '') || 'new-post';
   }
 
+  function parseListInput(value) {
+    return String(value || '')
+      .split(/[，,]/)
+      .map(function (item) { return item.trim(); })
+      .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+  }
+
+  function getPublishDateFromPath(path) {
+    var match = String(path || '').match(/(?:^posts\/)?(\d{4})-(\d{2})-(\d{2})|^(\d{4})\/(\d{2})\/(\d{2})\//i);
+    if (!match) {
+      return '';
+    }
+    return (match[1] || match[4]) + '-' + (match[2] || match[5]) + '-' + (match[3] || match[6]);
+  }
+
+  function parseMarkdownMeta(content) {
+    var text = String(content || '');
+    var meta = { title: '', date: '', categories: [], tags: [], body: text };
+    var match = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
+    if (!match) {
+      return meta;
+    }
+    var lines = match[1].split(/\r?\n/);
+    var currentKey = '';
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var pair = line.match(/^([A-Za-z_-]+):\s*(.*)$/);
+      if (pair) {
+        currentKey = pair[1].toLowerCase();
+        var value = pair[2].trim().replace(/^['"]|['"]$/g, '');
+        if (currentKey === 'title') meta.title = value;
+        if (currentKey === 'date') meta.date = value.slice(0, 10);
+        if (currentKey === 'category' || currentKey === 'categories') meta.categories = parseListInput(value.replace(/^\[|\]$/g, ''));
+        if (currentKey === 'tag' || currentKey === 'tags') meta.tags = parseListInput(value.replace(/^\[|\]$/g, ''));
+        continue;
+      }
+      var item = line.match(/^\s*-\s*(.+)$/);
+      if (item && (currentKey === 'categories' || currentKey === 'category')) {
+        meta.categories.push(item[1].trim().replace(/^['"]|['"]$/g, ''));
+      }
+      if (item && (currentKey === 'tags' || currentKey === 'tag')) {
+        meta.tags.push(item[1].trim().replace(/^['"]|['"]$/g, ''));
+      }
+    }
+    meta.body = text.slice(match[0].length);
+    return meta;
+  }
+
+  function escapeRegExp(value) {
+    return String(value || '').replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+  }
+
+  function stripLegacyPublishedIntro(markdown, title, dateText, fallbackPath) {
+    var text = String(markdown || '').replace(/^\uFEFF/, '');
+    var candidates = [title, dateText, basename(fallbackPath).replace(/\.md$/i, '')]
+      .map(function (item) { return String(item || '').trim(); })
+      .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+
+    for (var i = 0; i < candidates.length; i++) {
+      var pattern = new RegExp('^#\\s+' + escapeRegExp(candidates[i]) + '\\s*(?:\\r?\\n){1,2}', 'i');
+      text = text.replace(pattern, '');
+    }
+
+    var datePattern = dateText ? escapeRegExp(dateText) : '\\d{4}-\\d{2}-\\d{2}';
+    text = text.replace(new RegExp('^>\\s*发布时间[:：]\\s*' + datePattern + '\\s*(?:\\r?\\n){1,2}', 'i'), '');
+    return text.replace(/^\s+/, '');
+  }
+
+  function buildMarkdownWithMeta(title, dateText, categories, tags, markdown) {
+    var cleanedMarkdown = stripLegacyPublishedIntro(markdown, title, dateText, '');
+    var lines = ['---', 'title: ' + title, 'date: ' + dateText, 'categories:'];
+    if (categories.length) {
+      categories.forEach(function (item) { lines.push('  - ' + item); });
+    } else {
+      lines.push('  - 未分类');
+    }
+    lines.push('tags:');
+    if (tags.length) {
+      tags.forEach(function (item) { lines.push('  - ' + item); });
+    }
+    lines.push('---', '', String(cleanedMarkdown || '').replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, '').trim(), '');
+    return lines.join('\n');
+  }
   function buildExcerptFromMarkdown(markdown, maxLength) {
     var text = String(markdown || '')
       .replace(/```[\s\S]*?```/g, ' ')
@@ -558,6 +638,9 @@
     if (!slugEl.value.trim()) {
       slugEl.value = getCurrentDateText();
     }
+    if (publishDateEl && !publishDateEl.value) {
+      publishDateEl.value = getCurrentDateText();
+    }
   }
 
   function saveConfig() {
@@ -581,6 +664,11 @@
     var markdown = markdownEl.value || '';
     var title = titleEl.value.trim();
     var selectedDocPath = String(docPathEl.value || '').trim();
+    var markdownMeta = parseMarkdownMeta(markdown);
+    if (markdownMeta.body !== markdown) {
+      markdown = markdownMeta.body;
+      markdownEl.value = markdown;
+    }
 
     if (!title) {
       title = titleFromMarkdown(markdown, selectedDocPath || currentDocPath || '');
@@ -591,31 +679,55 @@
       markdown = '# ' + title + '\n\n';
       markdownEl.value = markdown;
     }
-
     var slug = slugify(slugEl.value.trim() || title);
-    var now = new Date();
-    var year = String(now.getFullYear());
-    var month = String(now.getMonth() + 1).padStart(2, '0');
-    var day = String(now.getDate()).padStart(2, '0');
+    var categories = parseListInput(categoryEl && categoryEl.value || markdownMeta.categories.join(','));
+    var tags = parseListInput(tagsEl && tagsEl.value || markdownMeta.tags.join(','));
+    var dateValue = publishDateEl && publishDateEl.value || markdownMeta.date || getPublishDateFromPath(selectedDocPath) || getCurrentDateText();
+    var dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.test(dateValue) ? dateValue.split('-') : getCurrentDateText().split('-');
+    var year = dateParts[0];
+    var month = dateParts[1];
+    var day = dateParts[2];
 
     var postDocMatch = selectedDocPath.match(/^posts\/(\d{4})-(\d{2})-(\d{2})-(.+)\.md$/i);
     if (postDocMatch) {
-      year = postDocMatch[1];
-      month = postDocMatch[2];
-      day = postDocMatch[3];
-      slug = slugify(postDocMatch[4]);
+      if (!(publishDateEl && publishDateEl.value)) {
+        year = postDocMatch[1];
+        month = postDocMatch[2];
+        day = postDocMatch[3];
+      }
+      if (!slugEl.value.trim()) {
+        slug = slugify(postDocMatch[4]);
+      }
     }
 
     var publishedHtmlMatch = selectedDocPath.match(/^(\d{4})\/(\d{2})\/(\d{2})\/(.+)\/index\.html$/i);
     if (publishedHtmlMatch) {
-      year = publishedHtmlMatch[1];
-      month = publishedHtmlMatch[2];
-      day = publishedHtmlMatch[3];
-      slug = slugify(publishedHtmlMatch[4]);
+      if (!(publishDateEl && publishDateEl.value)) {
+        year = publishedHtmlMatch[1];
+        month = publishedHtmlMatch[2];
+        day = publishedHtmlMatch[3];
+      }
+      if (!slugEl.value.trim()) {
+        slug = slugify(publishedHtmlMatch[4]);
+      }
     }
     slugEl.value = slug;
+    if (publishDateEl) {
+      publishDateEl.value = year + '-' + month + '-' + day;
+    }
+    if (categoryEl) {
+      categoryEl.value = categories.join(', ');
+    }
+    if (tagsEl) {
+      tagsEl.value = tags.join(', ');
+    }
 
     var dateText = year + '-' + month + '-' + day;
+    var cleanedMarkdown = stripLegacyPublishedIntro(markdown, title, dateText, selectedDocPath || currentDocPath || '');
+    if (cleanedMarkdown !== markdown) {
+      markdown = cleanedMarkdown;
+      markdownEl.value = markdown;
+    }
     var htmlContent = marked.parse(markdown);
     previewBodyEl.innerHTML = htmlContent;
     if (previewPanel) {
@@ -628,14 +740,8 @@
       : 'posts/' + dateText + '-' + slug + '.md';
     var articleUrl = '/' + htmlPath;
     var excerpt = buildExcerptFromMarkdown(markdown, 180);
-    var articleHtml = await buildArticleHtml(title, htmlContent, dateText, htmlPath, selectedDocPath, deployVersion);
-    var markdownWithMeta = [
-      '# ' + title,
-      '',
-      '> 发布时间: ' + dateText,
-      '',
-      markdown
-    ].join('\n');
+    var articleHtml = await buildArticleHtml(title, htmlContent, dateText, htmlPath, selectedDocPath, deployVersion, categories, tags);
+    var markdownWithMeta = buildMarkdownWithMeta(title, dateText, categories, tags, markdown);
 
     return {
       title: title,
@@ -649,8 +755,11 @@
       articleUrl: articleUrl,
       excerpt: excerpt,
       articleHtml: articleHtml,
-      markdownWithMeta: markdownWithMeta
-      ,deployVersion: deployVersion
+      markdownWithMeta: markdownWithMeta,
+      categories: categories,
+      tags: tags,
+      archive: year + '/' + month,
+      deployVersion: deployVersion
     };
   }
 
@@ -1280,8 +1389,16 @@
       currentDocPath = targetPath;
       currentDocSha = file.sha || '';
       setSelectedFile(targetPath);
-      titleEl.value = titleFromMarkdown(content, targetPath);
+      var meta = parseMarkdownMeta(content);
+      var publishedMeta = publishedPostMetaByPath[trimSlashes(targetPath)] || {};
+      titleEl.value = meta.title || publishedMeta.title || titleFromMarkdown(meta.body || content, targetPath);
       slugEl.value = slugFromPath(targetPath, titleEl.value);
+      var loadedDate = meta.date || String(publishedMeta.publishedAt || '').slice(0, 10) || getPublishDateFromPath(targetPath) || getCurrentDateText();
+      if (publishDateEl) publishDateEl.value = loadedDate;
+      if (categoryEl) categoryEl.value = (meta.categories.length ? meta.categories : (publishedMeta.categories || [])).join(', ');
+      if (tagsEl) tagsEl.value = (meta.tags.length ? meta.tags : (publishedMeta.tags || [])).join(', ');
+      content = stripLegacyPublishedIntro(meta.body || content, titleEl.value, loadedDate, targetPath);
+      markdownEl.value = content;
       renderPreview();
       renderDocTree(allDocPaths);
       renderPublishedDocs(publishedHtmlPaths);
@@ -1822,122 +1939,7 @@
   }
 
   function buildPublisherFeedScript() {
-    return [
-      '(function () {',
-      '  function safeText(value) {',
-      '    return String(value || "").replace(/[&<>"\\\']/g, function (ch) {',
-      '      if (ch === "&") return "&amp;";',
-      '      if (ch === "<") return "&lt;";',
-      '      if (ch === ">") return "&gt;";',
-      '      if (ch === "\\\"") return "&quot;";',
-      '      return "&#39;";',
-      '    });',
-      '  }',
-      '  function normalizeUrl(url) {',
-      '    var value = String(url || "").trim();',
-      '    if (!value) return "";',
-      '    return value.charAt(0) === "/" ? value : "/" + value;',
-      '  }',
-      '  function withVersion(url, version) {',
-      '    var base = normalizeUrl(url);',
-      '    var v = String(version || "").trim();',
-      '    if (!base || !v) return base;',
-      '    return base + (base.indexOf("?") === -1 ? "?" : "&") + "v=" + encodeURIComponent(v);',
-      '  }',
-      '  function parseDate(input) {',
-      '    var d = new Date(input || "");',
-      '    return Number.isNaN(d.getTime()) ? null : d;',
-      '  }',
-      '  function dayText(d) {',
-      '    return String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");',
-      '  }',
-      '  function dateText(d) {',
-      '    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");',
-      '  }',
-      '  function sorted(posts) {',
-      '    return posts.slice().sort(function (a, b) { return b.date - a.date; });',
-      '  }',
-      '  function removeLegacyBlocks() {',
-      '    var nodes = document.querySelectorAll("#publisher-live-home, #publisher-live-archives");',
-      '    for (var i = 0; i < nodes.length; i++) { nodes[i].remove(); }',
-      '  }',
-      '  function updatePostCount(total) {',
-      '    var counters = document.querySelectorAll(".site-state-posts .site-state-item-count");',
-      '    for (var i = 0; i < counters.length; i++) { counters[i].textContent = String(total); }',
-      '  }',
-      '  function patchHome(posts) {',
-      '    var root = document.querySelector(".main-inner.index.posts-expand");',
-      '    if (!root) return;',
-      '    var blocks = root.querySelectorAll(".post-block");',
-      '    for (var i = 0; i < blocks.length; i++) {',
-      '      blocks[i].remove();',
-      '    }',
-      '    var ordered = sorted(posts);',
-      '    for (var j = 0; j < ordered.length; j++) {',
-      '      var post = ordered[j];',
-      '      if (!post.date || !post.url) continue;',
-      '      var block = document.createElement("div");',
-      '      block.className = "post-block";',
-      '      block.style.visibility = "visible";',
-      '      block.style.opacity = "1";',
-      '      block.style.transform = "none";',
-      '      var body = post.excerpt ? ("<div class=\\\"post-body\\\" itemprop=\\\"articleBody\\\"><p>" + safeText(post.excerpt) + "</p></div>") : "";',
-      '      block.innerHTML = "<article itemscope itemtype=\\\"http://schema.org/Article\\\" class=\\\"post-content\\\"><header class=\\\"post-header\\\"><h2 class=\\\"post-title\\\" itemprop=\\\"name headline\\\"><a href=\\\"" + safeText(post.url) + "\\\" class=\\\"post-title-link\\\" itemprop=\\\"url\\\">" + safeText(post.title) + "</a></h2><div class=\\\"post-meta-container\\\"><div class=\\\"post-meta\\\"><span class=\\\"post-meta-item\\\"><span class=\\\"post-meta-item-icon\\\"><i class=\\\"far fa-calendar\\\"></i></span><span class=\\\"post-meta-item-text\\\">发表于</span><time>" + dateText(post.date) + "</time></span></div></div></header>" + body + "</article>";',
-      '      var descendants = block.querySelectorAll("*");',
-      '      for (var n = 0; n < descendants.length; n++) {',
-      '        descendants[n].style.visibility = "visible";',
-      '        descendants[n].style.opacity = "1";',
-      '        descendants[n].style.transform = "none";',
-      '      }',
-      '      root.appendChild(block);',
-      '    }',
-      '  }',
-      '  function patchArchives(posts) {',
-      '    var content = document.querySelector(".main-inner.archive.posts-collapse .post-block .post-content");',
-      '    if (!content) return;',
-      '    var valid = sorted(posts.filter(function (p) { return !!p.date; }));',
-      '    if (!valid.length) return;',
-      '    var groups = {};',
-      '    for (var i = 0; i < valid.length; i++) {',
-      '      var item = valid[i];',
-      '      var y = String(item.date.getFullYear());',
-      '      if (!groups[y]) groups[y] = [];',
-      '      groups[y].push(item);',
-      '    }',
-      '    var years = Object.keys(groups).sort(function (a, b) { return Number(b) - Number(a); });',
-      '    var html = "<div class=\\\"collection-title\\\"><span class=\\\"collection-header\\\">嗯..! 目前共计 " + valid.length + " 篇日志。继续努力。</span></div>";',
-      '    for (var j = 0; j < years.length; j++) {',
-      '      var year = years[j];',
-      '      var arr = groups[year];',
-      '      html += "<div class=\\\"collection-year\\\"><span class=\\\"collection-header\\\">" + year + "<span class=\\\"collection-year-count\\\">" + arr.length + "</span></span></div>";',
-      '      for (var k = 0; k < arr.length; k++) {',
-      '        var p = arr[k];',
-      '        html += "<article itemscope itemtype=\\\"http://schema.org/Article\\\"><header class=\\\"post-header\\\"><div class=\\\"post-meta-container\\\"><time>" + dayText(p.date) + "</time></div><div class=\\\"post-title\\\"><a class=\\\"post-title-link\\\" href=\\\"" + safeText(p.url) + "\\\">" + safeText(p.title) + "</a></div></header></article>";',
-      '      }',
-      '    }',
-      '    content.innerHTML = html;',
-      '  }',
-      '  fetch("/blog-data/posts.json?ts=" + Date.now())',
-      '    .then(function (r) { if (!r.ok) throw new Error("feed not found"); return r.json(); })',
-      '    .then(function (posts) {',
-      '      if (!Array.isArray(posts) || !posts.length) return;',
-      '      var normalized = posts.map(function (item) {',
-      '        return {',
-      '          title: String(item && item.title || ""),',
-      '          url: normalizeUrl(item && item.url || ""),',
-      '          date: parseDate(item && item.publishedAt),',
-      '          excerpt: String(item && item.excerpt || "")',
-      '        };',
-      '      }).filter(function (item) { return item.url; });',
-      '      removeLegacyBlocks();',
-      '      updatePostCount(normalized.length);',
-      '      patchHome(normalized);',
-      '      patchArchives(normalized);',
-      '    })',
-      '    .catch(function () {});',
-      '})();',
-      ''
-    ].join('\n');
+    return "(function () {\n  function safeText(value) {\n    return String(value || '').replace(/[&<>\"']/g, function (ch) {\n      if (ch === '&') return '&amp;';\n      if (ch === '<') return '&lt;';\n      if (ch === '>') return '&gt;';\n      if (ch === '\"') return '&quot;';\n      return '&#39;';\n    });\n  }\n  function normalizeUrl(url) {\n    var value = String(url || '').trim();\n    if (!value) return '';\n    return value.charAt(0) === '/' ? value : '/' + value;\n  }\n  function parseDate(input) {\n    var d = new Date(input || '');\n    return Number.isNaN(d.getTime()) ? null : d;\n  }\n  function dayText(d) {\n    return String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');\n  }\n  function dateText(d) {\n    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');\n  }\n  function list(value) {\n    return Array.isArray(value) ? value.filter(Boolean).map(String) : [];\n  }\n  function sorted(posts) {\n    return posts.slice().sort(function (a, b) { return b.date - a.date; });\n  }\n  function slug(value) {\n    return encodeURIComponent(String(value || '').trim()).replace(/%2F/gi, '/');\n  }\n  function groupByTerm(posts, key) {\n    var groups = {};\n    posts.forEach(function (post) {\n      list(post[key]).forEach(function (term) {\n        if (!groups[term]) groups[term] = [];\n        groups[term].push(post);\n      });\n    });\n    return groups;\n  }\n  function updateCounts(posts) {\n    var tagTotal = Object.keys(groupByTerm(posts, 'tags')).length;\n    var categoryTotal = Object.keys(groupByTerm(posts, 'categories')).length;\n    document.querySelectorAll('.site-state-posts .site-state-item-count').forEach(function (n) { n.textContent = String(posts.length); });\n    document.querySelectorAll('.site-state-tags .site-state-item-count').forEach(function (n) { n.textContent = String(tagTotal); });\n    document.querySelectorAll('.site-state-categories .site-state-item-count').forEach(function (n) { n.textContent = String(categoryTotal); });\n  }\n  function termMeta(post) {\n    var html = '';\n    if (post.categories.length) {\n      html += '<span class=\"post-meta-item\"><span class=\"post-meta-item-icon\"><i class=\"far fa-folder\"></i></span><span class=\"post-meta-item-text\">分类于</span> ' + post.categories.map(function (c) { return '<a href=\"/categories/?term=' + slug(c) + '\">' + safeText(c) + '</a>'; }).join(' / ') + '</span>';\n    }\n    if (post.tags.length) {\n      html += '<span class=\"post-meta-item\"><span class=\"post-meta-item-icon\"><i class=\"fa fa-tags\"></i></span><span class=\"post-meta-item-text\">标签</span> ' + post.tags.map(function (t) { return '<a href=\"/tags/?term=' + slug(t) + '\">#' + safeText(t) + '</a>'; }).join(' ') + '</span>';\n    }\n    return html;\n  }\n  function postBlock(post) {\n    var body = post.excerpt ? ('<div class=\"post-body\" itemprop=\"articleBody\"><p>' + safeText(post.excerpt) + '</p></div>') : '';\n    return '<div class=\"post-block\" style=\"visibility:visible;opacity:1;transform:none\"><article itemscope itemtype=\"http://schema.org/Article\" class=\"post-content\"><header class=\"post-header\"><h2 class=\"post-title\" itemprop=\"name headline\"><a href=\"' + safeText(post.url) + '\" class=\"post-title-link\" itemprop=\"url\">' + safeText(post.title) + '</a></h2><div class=\"post-meta-container\"><div class=\"post-meta\"><span class=\"post-meta-item\"><span class=\"post-meta-item-icon\"><i class=\"far fa-calendar\"></i></span><span class=\"post-meta-item-text\">发表于</span><time>' + dateText(post.date) + '</time></span>' + termMeta(post) + '</div></div></header>' + body + '</article></div>';\n  }\n  function patchHome(posts) {\n    var root = document.querySelector('.main-inner.index.posts-expand');\n    if (!root) return;\n    root.querySelectorAll('.post-block').forEach(function (n) { n.remove(); });\n    root.insertAdjacentHTML('beforeend', sorted(posts).filter(function (p) { return p.date && p.url; }).map(postBlock).join(''));\n  }\n  function archiveHtml(posts) {\n    var valid = sorted(posts.filter(function (p) { return !!p.date; }));\n    var groups = {};\n    valid.forEach(function (item) { var y = String(item.date.getFullYear()); (groups[y] || (groups[y] = [])).push(item); });\n    var html = '<div class=\"collection-title\"><span class=\"collection-header\">嗯..! 目前共计 ' + valid.length + ' 篇日志。继续努力。</span></div>';\n    Object.keys(groups).sort(function (a, b) { return Number(b) - Number(a); }).forEach(function (year) {\n      html += '<div class=\"collection-year\"><span class=\"collection-header\">' + year + '<span class=\"collection-year-count\">' + groups[year].length + '</span></span></div>';\n      groups[year].forEach(function (p) { html += '<article itemscope itemtype=\"http://schema.org/Article\"><header class=\"post-header\"><div class=\"post-meta-container\"><time>' + dayText(p.date) + '</time></div><div class=\"post-title\"><a class=\"post-title-link\" href=\"' + safeText(p.url) + '\">' + safeText(p.title) + '</a></div></header></article>'; });\n    });\n    return html;\n  }\n  function patchArchives(posts) {\n    var content = document.querySelector('.main-inner.archive.posts-collapse .post-block .post-content');\n    if (content) content.innerHTML = archiveHtml(posts);\n  }\n  function patchTags(posts) {\n    var body = document.querySelector('.main-inner.page .post-body');\n    if (!body || !/\\/tags\\/?(?:index\\.html)?$/.test(location.pathname)) return;\n    var groups = groupByTerm(posts, 'tags');\n    var terms = Object.keys(groups).sort();\n    body.innerHTML = '<div class=\"tag-cloud\"><div class=\"tag-cloud-title\">目前共计 ' + terms.length + ' 个标签</div><div class=\"tag-cloud-tags\">' + terms.map(function (t) { return '<a href=\"/tags/?term=' + slug(t) + '\" style=\"font-size: 12px;\" class=\"tag-cloud-0\">' + safeText(t) + '</a>'; }).join(' ') + '</div></div>';\n  }\n  function patchCategories(posts) {\n    var body = document.querySelector('.main-inner.page .post-body');\n    if (!body || !/\\/categories\\/?(?:index\\.html)?$/.test(location.pathname)) return;\n    var groups = groupByTerm(posts, 'categories');\n    var terms = Object.keys(groups).sort();\n    body.innerHTML = '<div class=\"category-all-page\"><div class=\"category-all-title\">目前共计 ' + terms.length + ' 个分类</div><div class=\"category-all\"><ul class=\"category-list\">' + terms.map(function (t) { return '<li class=\"category-list-item\"><a class=\"category-list-link\" href=\"/categories/?term=' + slug(t) + '\">' + safeText(t) + '</a><span class=\"category-list-count\">' + groups[t].length + '</span></li>'; }).join('') + '</ul></div></div>';\n  }\n  function patchTermListing(posts) {\n    var params = new URLSearchParams(location.search || '');\n    var term = params.get('term') || '';\n    var isTagPage = /^\\/tags\\/?/.test(location.pathname);\n    var isCategoryPage = /^\\/categories\\/?/.test(location.pathname);\n    var tag = isTagPage ? term || decodeURIComponent((location.pathname.match(/^\\/tags\\/([^/]+)/) || [])[1] || '') : '';\n    var category = isCategoryPage ? term || decodeURIComponent((location.pathname.match(/^\\/categories\\/([^/]+)/) || [])[1] || '') : '';\n    var root = document.querySelector('.main-inner.archive.posts-collapse .post-block .post-content') || document.querySelector('.main-inner.page .post-body');\n    if (!root || (!tag && !category)) return;\n    var filtered = posts.filter(function (p) { return tag ? p.tags.indexOf(tag) !== -1 : p.categories.indexOf(category) !== -1; });\n    root.innerHTML = archiveHtml(filtered);\n  }\n  fetch('/blog-data/posts.json?ts=' + Date.now())\n    .then(function (r) { if (!r.ok) throw new Error('feed not found'); return r.json(); })\n    .then(function (posts) {\n      if (!Array.isArray(posts) || !posts.length) return;\n      var normalized = posts.map(function (item) { return { title: String(item && item.title || ''), url: normalizeUrl(item && item.url || ''), date: parseDate(item && item.publishedAt), excerpt: String(item && item.excerpt || ''), categories: list(item && item.categories), tags: list(item && item.tags) }; }).filter(function (item) { return item.url; });\n      updateCounts(normalized);\n      patchHome(normalized);\n      patchArchives(normalized);\n      patchTags(normalized);\n      patchCategories(normalized);\n      patchTermListing(normalized);\n    })\n    .catch(function () {});\n})();\n";
   }
 
   async function ensurePublisherFeedInjected(owner, repo, branch, token, deployVersion) {
@@ -1966,7 +1968,7 @@
     var scriptSrc = '/js/publisher-feed.js?v=' + scriptVersion;
     await upsertFile(owner, repo, branch, scriptPath, buildPublisherFeedScript(), token, 'chore: update publisher feed script');
 
-    var targets = ['index.html', 'archives/index.html'];
+    var targets = ['index.html', 'archives/index.html', 'tags/index.html', 'categories/index.html'];
     for (var i = 0; i < targets.length; i++) {
       var pagePath = targets[i];
       var file = await readTextFile(owner, repo, branch, pagePath, token);
@@ -2084,7 +2086,7 @@
     return null;
   }
 
-  async function buildArticleHtml(title, htmlContent, dateText, htmlPath, selectedDocPath, deployVersion) {
+  async function buildArticleHtml(title, htmlContent, dateText, htmlPath, selectedDocPath, deployVersion, categories, tags) {
     var templateHtml = await getArticleTemplateHtml(selectedDocPath, htmlPath);
     if (!templateHtml) {
       throw new Error('未找到可复用的旧博客文章模板，无法生成旧样式页面。');
@@ -2203,10 +2205,21 @@
       timeNode.setAttribute('title', '创建时间：' + displayTime + ' / 修改时间：' + displayTime);
       timeNode.textContent = dateText;
     }
-
     var bodyNode = doc.querySelector('.post-body');
     if (bodyNode) {
       bodyNode.innerHTML = htmlContent;
+    }
+
+    var metaContainer = doc.querySelector('.post-meta');
+    if (metaContainer) {
+      var oldTerms = metaContainer.querySelectorAll('.publisher-term-meta');
+      for (var tm = 0; tm < oldTerms.length; tm++) oldTerms[tm].remove();
+      if (categories && categories.length) {
+        metaContainer.insertAdjacentHTML('beforeend', '<span class="post-meta-item publisher-term-meta"><span class="post-meta-item-icon"><i class="far fa-folder"></i></span><span class="post-meta-item-text">分类于</span> ' + categories.map(function (item) { return '<a href="/categories/?term=' + encodeURIComponent(item) + '">' + item + '</a>'; }).join(' / ') + '</span>');
+      }
+      if (tags && tags.length) {
+        metaContainer.insertAdjacentHTML('beforeend', '<span class="post-meta-item publisher-term-meta"><span class="post-meta-item-icon"><i class="fa fa-tags"></i></span><span class="post-meta-item-text">标签</span> ' + tags.map(function (item) { return '<a href="/tags/?term=' + encodeURIComponent(item) + '">#' + item + '</a>'; }).join(' ') + '</span>');
+      }
     }
 
     var sidebarInner = doc.querySelector('.sidebar-inner');
@@ -2334,7 +2347,10 @@
         url: articleUrl,
         version: payload.deployVersion,
         publishedAt: payload.dateText + 'T00:00:00Z',
-        excerpt: excerpt
+        excerpt: excerpt,
+        categories: payload.categories,
+        tags: payload.tags,
+        archive: payload.archive
       });
       await upsertFile(owner, repo, branch, manifestPath, JSON.stringify(nextPosts, null, 2) + '\n', token, 'publish: ' + title + ' (manifest)');
 
@@ -2454,6 +2470,9 @@
   });
 
   slugEl.addEventListener('input', markCompileDirty);
+  if (publishDateEl) publishDateEl.addEventListener('input', markCompileDirty);
+  if (categoryEl) categoryEl.addEventListener('input', markCompileDirty);
+  if (tagsEl) tagsEl.addEventListener('input', markCompileDirty);
   markdownEl.addEventListener('input', function () {
     markCompileDirty();
     renderPreview();
