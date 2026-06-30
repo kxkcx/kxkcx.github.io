@@ -363,6 +363,7 @@
       'editor.html',
       'css/blog.css',
       'css/editor-modern.css',
+      'js/vendor/marked.min.js',
       'js/app.js',
       'js/editor-new.js'
     ];
