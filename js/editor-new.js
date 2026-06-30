@@ -33,16 +33,36 @@
   const statusEl = document.getElementById('status');
   const previewBody = document.getElementById('previewBody');
 
+  const materialQuery = document.getElementById('materialQuery');
+  const materialSearchBtn = document.getElementById('materialSearchBtn');
+  const materialTabSearch = document.getElementById('materialTabSearch');
+  const materialTabFav = document.getElementById('materialTabFav');
+  const materialFavCount = document.getElementById('materialFavCount');
+  const materialStatus = document.getElementById('materialStatus');
+  const materialList = document.getElementById('materialList');
+  const materialMoreBtn = document.getElementById('materialMoreBtn');
+
   const STORAGE_KEY = 'blog-publisher-config-v3';
   const SESSION_KEY = 'blog-publisher-auth-v3';
   const LAYOUT_KEY = 'blog-publisher-layout-v1';
   const RUNTIME_KEY = 'blog-runtime-compiled-v1';
+  const FAVORITES_KEY = 'blog-material-favorites-v1';
+  const SUMMARY_CACHE_KEY = 'blog-material-summary-cache-v1';
+  const HN_PAGE_SIZE = 30;
 
   const state = {
     posts: [],
     markdownMap: new Map(),
     selectedId: '',
-    sidebarCollapsed: false
+    sidebarCollapsed: false,
+    materialTab: 'search',
+    materialResults: [],
+    favorites: [],
+    materialKeyword: '',
+    materialPage: 0,
+    materialPages: 0,
+    materialLoading: false,
+    summaryCache: {}
   };
 
   function applySidebarLayout() {
@@ -257,6 +277,149 @@
     const md = state.markdownMap.get(post.contentPath) || '';
     const html = window.marked ? window.marked.parse(md) : '<pre>' + esc(md) + '</pre>';
     previewBody.innerHTML = html;
+  }
+
+  function loadMaterialFavorites() {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      state.favorites = Array.isArray(list) ? list : [];
+    } catch (e) {
+      state.favorites = [];
+    }
+  }
+
+  function saveMaterialFavorites() {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(state.favorites));
+  }
+
+  function isFavorited(url) {
+    return state.favorites.some(function (m) { return m.url === url; });
+  }
+
+  function toggleFavorite(item) {
+    if (isFavorited(item.url)) {
+      state.favorites = state.favorites.filter(function (m) { return m.url !== item.url; });
+    } else {
+      state.favorites = [Object.assign({}, item, { savedAt: new Date().toISOString() })].concat(state.favorites);
+    }
+    saveMaterialFavorites();
+    renderMaterials();
+  }
+
+  function insertMaterial(item) {
+    const snippet = '- [' + item.title + '](' + item.url + ')';
+    const el = markdownInput;
+    const start = typeof el.selectionStart === 'number' ? el.selectionStart : el.value.length;
+    const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : el.value.length;
+    const before = el.value.slice(0, start);
+    const after = el.value.slice(end);
+    const prefix = before && !before.endsWith('\n') ? '\n' : '';
+    el.value = before + prefix + snippet + '\n' + after;
+    const caret = (before + prefix + snippet + '\n').length;
+    el.focus();
+    el.setSelectionRange(caret, caret);
+    setStatus('已插入素材引用：' + item.title);
+  }
+
+  function fetchMaterials(keyword) {
+    const url = 'https://hn.algolia.com/api/v1/search?tags=story&hitsPerPage=20&query=' + encodeURIComponent(keyword);
+    return fetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error('抓取失败(' + r.status + ')');
+        return r.json();
+      })
+      .then(function (data) {
+        const hits = Array.isArray(data.hits) ? data.hits : [];
+        return hits
+          .filter(function (h) { return h.url && h.title; })
+          .map(function (h) {
+            return {
+              title: String(h.title),
+              url: String(h.url),
+              source: 'Hacker News',
+              points: Number(h.points) || 0,
+              author: String(h.author || ''),
+              comments: Number(h.num_comments) || 0,
+              createdAt: String(h.created_at || '')
+            };
+          })
+          .sort(function (a, b) { return b.points - a.points; });
+      });
+  }
+
+  function searchMaterials() {
+    const keyword = (materialQuery.value || '').trim();
+    if (!keyword) {
+      materialStatus.textContent = '请输入关键词。';
+      return;
+    }
+    state.materialTab = 'search';
+    updateMaterialTabs();
+    materialStatus.textContent = '正在抓取「' + keyword + '」相关优质文章...';
+    materialList.innerHTML = '';
+    fetchMaterials(keyword)
+      .then(function (items) {
+        state.materialResults = items;
+        materialStatus.textContent = items.length
+          ? '共找到 ' + items.length + ' 篇（按热度排序）。'
+          : '未找到相关文章，换个关键词试试。';
+        renderMaterials();
+      })
+      .catch(function (err) {
+        materialStatus.textContent = '抓取失败：' + (err.message || String(err)) + '（可能受网络限制）';
+      });
+  }
+
+  function updateMaterialTabs() {
+    materialTabSearch.classList.toggle('active', state.materialTab === 'search');
+    materialTabFav.classList.toggle('active', state.materialTab === 'fav');
+    if (materialFavCount) materialFavCount.textContent = String(state.favorites.length);
+  }
+
+  function renderMaterials() {
+    updateMaterialTabs();
+    const list = state.materialTab === 'fav' ? state.favorites : state.materialResults;
+    if (!list.length) {
+      materialList.innerHTML = '<p class="material-status">' +
+        (state.materialTab === 'fav' ? '还没有收藏，点击搜索结果里的「收藏」。' : '暂无结果。') +
+        '</p>';
+      return;
+    }
+    materialList.innerHTML = list.map(function (item) {
+      const faved = isFavorited(item.url);
+      const meta = [];
+      if (item.source) meta.push(esc(item.source));
+      if (item.points) meta.push('▲ ' + item.points);
+      if (item.comments) meta.push('💬 ' + item.comments);
+      if (item.author) meta.push('@' + esc(item.author));
+      return '<article class="material-item" data-url="' + esc(item.url) + '">' +
+        '<a class="m-title" href="' + esc(item.url) + '" target="_blank" rel="noopener">' + esc(item.title) + '</a>' +
+        '<div class="m-meta">' + meta.join('<span>·</span>') + '</div>' +
+        '<div class="m-actions">' +
+          '<button data-act="fav" class="' + (faved ? 'faved' : '') + '" type="button">' + (faved ? '已收藏' : '收藏') + '</button>' +
+          '<button data-act="insert" type="button">插入正文</button>' +
+        '</div>' +
+      '</article>';
+    }).join('');
+  }
+
+  function findMaterialByUrl(url) {
+    return state.materialResults.find(function (m) { return m.url === url; }) ||
+      state.favorites.find(function (m) { return m.url === url; }) || null;
+  }
+
+  function onMaterialListClick(event) {
+    const btn = event.target.closest('button[data-act]');
+    if (!btn) return;
+    const node = event.target.closest('.material-item');
+    if (!node) return;
+    const url = node.getAttribute('data-url') || '';
+    const item = findMaterialByUrl(url);
+    if (!item) return;
+    const act = btn.getAttribute('data-act');
+    if (act === 'fav') toggleFavorite(item);
+    if (act === 'insert') insertMaterial(item);
   }
 
   function loadFromRemote() {
@@ -607,6 +770,28 @@
     deployBtn.addEventListener('click', deploy);
     postList.addEventListener('click', onPostListClick);
     searchInput.addEventListener('input', renderPostList);
+
+    if (materialSearchBtn) materialSearchBtn.addEventListener('click', searchMaterials);
+    if (materialQuery) {
+      materialQuery.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') searchMaterials();
+      });
+    }
+    if (materialTabSearch) {
+      materialTabSearch.addEventListener('click', function () {
+        state.materialTab = 'search';
+        renderMaterials();
+      });
+    }
+    if (materialTabFav) {
+      materialTabFav.addEventListener('click', function () {
+        state.materialTab = 'fav';
+        renderMaterials();
+      });
+    }
+    if (materialList) materialList.addEventListener('click', onMaterialListClick);
+    loadMaterialFavorites();
+    renderMaterials();
 
     ownerInput.addEventListener('change', saveConfig);
     repoInput.addEventListener('change', saveConfig);
