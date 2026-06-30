@@ -7,11 +7,69 @@
   const recentList = document.getElementById('recentList');
   const tagCloud = document.getElementById('tagCloud');
   const categoryCloud = document.getElementById('categoryCloud');
+  const siteLayout = document.getElementById('siteLayout');
+  const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+
+  const LAYOUT_KEY = 'blog-front-layout-v1';
+  const RUNTIME_KEY = 'blog-runtime-compiled-v1';
 
   const state = {
     posts: [],
-    contentCache: new Map()
+    contentCache: new Map(),
+    sidebarCollapsed: false
   };
+
+  function readRuntimeSnapshot() {
+    try {
+      const raw = localStorage.getItem(RUNTIME_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.posts)) return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function applyRuntimeSnapshot(snapshot) {
+    if (!snapshot) return false;
+    const normalized = normalize(snapshot.posts || []);
+    if (!normalized.length) return false;
+    state.posts = normalized;
+    state.contentCache = new Map();
+    const markdowns = snapshot.markdowns || {};
+    Object.keys(markdowns).forEach(function (path) {
+      state.contentCache.set(path, String(markdowns[path] || ''));
+    });
+    updateSidebar();
+    route();
+    return true;
+  }
+
+  function applyLayout() {
+    if (!siteLayout || !toggleSidebarBtn) return;
+    siteLayout.classList.toggle('sidebar-collapsed', state.sidebarCollapsed);
+    document.body.classList.toggle('sidebar-collapsed', state.sidebarCollapsed);
+    toggleSidebarBtn.textContent = state.sidebarCollapsed ? '展开侧栏' : '收起侧栏';
+    toggleSidebarBtn.setAttribute('aria-pressed', state.sidebarCollapsed ? 'true' : 'false');
+  }
+
+  function restoreLayout() {
+    try {
+      const raw = localStorage.getItem(LAYOUT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      state.sidebarCollapsed = !!parsed.sidebarCollapsed;
+    } catch (e) {
+      state.sidebarCollapsed = false;
+    }
+  }
+
+  function toggleSidebar() {
+    state.sidebarCollapsed = !state.sidebarCollapsed;
+    applyLayout();
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify({ sidebarCollapsed: state.sidebarCollapsed }));
+  }
 
   function esc(value) {
     return String(value || '').replace(/[&<>"']/g, function (ch) {
@@ -219,19 +277,45 @@
   }
 
   function boot() {
+    restoreLayout();
+    applyLayout();
+
+    const runtimeSnapshot = readRuntimeSnapshot();
+    const hasRuntime = runtimeSnapshot ? applyRuntimeSnapshot(runtimeSnapshot) : false;
+
     fetch('/blog-data/posts.json?ts=' + Date.now())
       .then(function (r) {
         if (!r.ok) throw new Error('posts.json 加载失败');
         return r.json();
       })
       .then(function (data) {
+        const latestRuntime = readRuntimeSnapshot();
+        if (latestRuntime && applyRuntimeSnapshot(latestRuntime)) {
+          return;
+        }
+        if (hasRuntime) {
+          return;
+        }
         state.posts = normalize(data);
+        state.contentCache = new Map();
         updateSidebar();
         route();
       })
       .catch(function (err) {
         root.innerHTML = '<div class="empty">' + esc(err.message || '加载失败') + '</div>';
       });
+
+    if (toggleSidebarBtn) {
+      toggleSidebarBtn.addEventListener('click', toggleSidebar);
+    }
+
+    window.addEventListener('storage', function (event) {
+      if (event.key !== RUNTIME_KEY) return;
+      const snapshot = readRuntimeSnapshot();
+      if (snapshot) {
+        applyRuntimeSnapshot(snapshot);
+      }
+    });
   }
 
   window.addEventListener('hashchange', route);
