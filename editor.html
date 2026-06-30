@@ -4,13 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Markdown 发布台</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+SC:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap">
   <link rel="stylesheet" href="/css/editor-modern.css">
 </head>
 <body>
   <section id="loginShell" class="card auth">
     <h1>Markdown 发布台</h1>
-    <p>后台写 Markdown，编译后即可部署。默认账号密码：coderkou / coderkou</p>
+    <p>后台写 Markdown，编译后即可部署。</p>
     <label>账号
       <input id="loginUser" type="text" placeholder="请输入账号" autocomplete="off">
     </label>
@@ -31,12 +30,13 @@
         <p>统一数据源：posts.json + markdown 文件。支持增量部署与强制全量覆盖同步。</p>
       </div>
       <div class="toolbar">
+        <button id="toggleSidebarBtn" type="button">隐藏侧边栏</button>
         <a href="/" target="_blank" rel="noopener">访问前台</a>
         <button id="logoutBtn" type="button">退出登录</button>
       </div>
     </header>
 
-    <section class="grid">
+    <section id="workspaceGrid" class="grid">
       <aside class="card sidebar">
         <h2>文章列表</h2>
         <label>搜索
@@ -118,7 +118,7 @@
     </section>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="/js/vendor/marked.min.js"></script>
   <script src="/js/editor-new.js"></script>
 </body>
 </html>
