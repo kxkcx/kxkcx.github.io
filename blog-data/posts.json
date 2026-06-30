@@ -1,19 +1,62 @@
 [
   {
+    "id": "2026-06-27",
     "title": "2026-06-27",
-    "url": "/2026/06/27/indexhtml/index.html",
-    "version": "1782613588999",
-    "publishedAt": "2026-06-27T00:00:00Z",
-    "excerpt": "开始写博客！",
+    "slug": "2026-06-27",
+    "publishedAt": "2026-06-26T00:00:00Z",
+    "archive": "2026/06",
     "categories": [],
     "tags": [],
-    "archive": "2026/06"
+    "excerpt": "开始写博客！",
+    "contentPath": "blog-data/posts/2026-06-27.md",
+    "updatedAt": "2026-06-30T14:31:28.891Z"
   },
   {
-    "title": "2026-06-27",
-    "url": "/2026/06/27/2026-06-27/index.html",
-    "version": "1782555592118",
-    "publishedAt": "2026-06-27T00:00:00Z",
-    "excerpt": "开始写博客！"
+    "id": "spring技术内幕",
+    "title": "spring技术内幕",
+    "slug": "spring技术内幕",
+    "publishedAt": "2024-09-14T00:00:00Z",
+    "archive": "2024/09",
+    "categories": [],
+    "tags": [],
+    "excerpt": "spring的设计理念和整体架构",
+    "contentPath": "blog-data/posts/spring技术内幕.md",
+    "updatedAt": "2026-06-30T14:31:28.892Z"
+  },
+  {
+    "id": "spring-boot",
+    "title": "spring-boot",
+    "slug": "spring-boot",
+    "publishedAt": "2024-09-07T00:00:00Z",
+    "archive": "2024/09",
+    "categories": [],
+    "tags": [],
+    "excerpt": "（迁移内容为空，请手动补充）",
+    "contentPath": "blog-data/posts/spring-boot.md",
+    "updatedAt": "2026-06-30T14:31:28.892Z"
+  },
+  {
+    "id": "git实战",
+    "title": "git实战",
+    "slug": "git实战",
+    "publishedAt": "2024-08-30T00:00:00Z",
+    "archive": "2024/08",
+    "categories": [],
+    "tags": [],
+    "excerpt": "实战一",
+    "contentPath": "blog-data/posts/git实战.md",
+    "updatedAt": "2026-06-30T14:50:59.270Z"
+  },
+  {
+    "id": "搭建自己的博客",
+    "title": "搭建自己的博客",
+    "slug": "搭建自己的博客",
+    "publishedAt": "2024-08-28T00:00:00Z",
+    "archive": "2024/08",
+    "categories": [],
+    "tags": [],
+    "excerpt": "搭建方案",
+    "contentPath": "blog-data/posts/搭建自己的博客.md",
+    "updatedAt": "2026-06-30T14:31:28.894Z"
   }
 ]
