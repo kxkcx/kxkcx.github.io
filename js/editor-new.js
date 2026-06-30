@@ -6,6 +6,8 @@
   const loginPass = document.getElementById('loginPass');
   const loginStatus = document.getElementById('loginStatus');
   const logoutBtn = document.getElementById('logoutBtn');
+  const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+  const workspaceGrid = document.getElementById('workspaceGrid');
 
   const postList = document.getElementById('postList');
   const searchInput = document.getElementById('searchInput');
@@ -33,12 +35,38 @@
 
   const STORAGE_KEY = 'blog-publisher-config-v3';
   const SESSION_KEY = 'blog-publisher-auth-v3';
+  const LAYOUT_KEY = 'blog-publisher-layout-v1';
+  const RUNTIME_KEY = 'blog-runtime-compiled-v1';
 
   const state = {
     posts: [],
     markdownMap: new Map(),
-    selectedId: ''
+    selectedId: '',
+    sidebarCollapsed: false
   };
+
+  function applySidebarLayout() {
+    if (!workspaceGrid || !toggleSidebarBtn) return;
+    workspaceGrid.classList.toggle('sidebar-collapsed', state.sidebarCollapsed);
+    toggleSidebarBtn.textContent = state.sidebarCollapsed ? '展开侧边栏' : '隐藏侧边栏';
+  }
+
+  function toggleSidebar() {
+    state.sidebarCollapsed = !state.sidebarCollapsed;
+    applySidebarLayout();
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify({ sidebarCollapsed: state.sidebarCollapsed }));
+  }
+
+  function restoreLayout() {
+    try {
+      const raw = localStorage.getItem(LAYOUT_KEY);
+      if (!raw) return;
+      const layout = JSON.parse(raw);
+      state.sidebarCollapsed = !!layout.sidebarCollapsed;
+    } catch (e) {
+      state.sidebarCollapsed = false;
+    }
+  }
 
   function setStatus(text) {
     statusEl.textContent = text;
@@ -189,9 +217,38 @@
     state.markdownMap.set(contentPath, markdown + '\n');
 
     state.posts.sort(function (a, b) { return a.publishedAt < b.publishedAt ? 1 : -1; });
+    writeRuntimeSnapshot();
     renderPostList();
     setStatus('编译完成：已更新内存数据库。');
     return post;
+  }
+
+  function writeRuntimeSnapshot() {
+    const markdowns = {};
+    state.markdownMap.forEach(function (content, contentPath) {
+      markdowns[contentPath] = String(content || '');
+    });
+
+    const posts = state.posts.map(function (p) {
+      return {
+        id: p.id,
+        title: p.title,
+        slug: p.slug,
+        publishedAt: p.publishedAt,
+        archive: p.archive,
+        categories: p.categories,
+        tags: p.tags,
+        excerpt: p.excerpt,
+        contentPath: p.contentPath,
+        updatedAt: p.updatedAt || new Date().toISOString()
+      };
+    });
+
+    localStorage.setItem(RUNTIME_KEY, JSON.stringify({
+      updatedAt: new Date().toISOString(),
+      posts: posts,
+      markdowns: markdowns
+    }));
   }
 
   function previewCurrent() {
@@ -470,6 +527,7 @@
         return upsertByContentsApi(files);
       })
       .then(function () {
+        localStorage.removeItem(RUNTIME_KEY);
         setStatus('部署成功。前台刷新后可见最新内容。');
       })
       .catch(function (err) {
@@ -494,6 +552,7 @@
     state.posts = state.posts.filter(function (p) { return p.id !== post.id; });
     state.markdownMap.delete(post.contentPath);
     state.selectedId = state.posts[0] ? state.posts[0].id : '';
+    writeRuntimeSnapshot();
     renderPostList();
     fillForm(currentPost());
     setStatus('已删除，点击部署后远程将同步删除。');
@@ -512,7 +571,7 @@
     const user = loginUser.value.trim();
     const pass = loginPass.value.trim();
     if (user !== 'coderkou' || pass !== 'coderkou') {
-      loginStatus.textContent = '账号或密码错误（默认 coderkou / coderkou）';
+      loginStatus.textContent = '账号或密码错误';
       return;
     }
     sessionStorage.setItem(SESSION_KEY, '1');
@@ -532,8 +591,14 @@
   }
 
   function bootstrap() {
+    restoreLayout();
+    applySidebarLayout();
+
     loginBtn.addEventListener('click', tryLogin);
     logoutBtn.addEventListener('click', logout);
+    if (toggleSidebarBtn) {
+      toggleSidebarBtn.addEventListener('click', toggleSidebar);
+    }
     newBtn.addEventListener('click', createPost);
     deleteBtn.addEventListener('click', removePost);
     compileBtn.addEventListener('click', compileCurrent);
