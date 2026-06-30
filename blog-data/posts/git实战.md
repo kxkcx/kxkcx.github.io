@@ -37,4 +37,3 @@
 
 
 - curl -H "Authorization: token YOUR_GITHUB_TOKEN" \      -d '&#123;"name": "YOUR_REPO_NAME", "private": false&#125;' \      https://api.github.com/user/repos
-
