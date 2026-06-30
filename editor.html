@@ -47,6 +47,25 @@
           <button id="deleteBtn" class="danger" type="button">删除</button>
         </div>
         <div id="postList" class="post-list"></div>
+
+        <section class="material-box">
+          <h2>素材库 · 草稿箱</h2>
+          <label>关键词抓取
+            <input id="materialQuery" type="text" placeholder="如：向量数据库、rust、LLM">
+          </label>
+          <div class="toolbar">
+            <button id="materialSearchBtn" class="primary" type="button">抓取优质文章</button>
+          </div>
+          <div class="material-tabs">
+            <button id="materialTabSearch" class="seg active" type="button">搜索结果</button>
+            <button id="materialTabFav" class="seg" type="button">我的收藏 <span id="materialFavCount">0</span></button>
+          </div>
+          <p id="materialStatus" class="material-status">输入关键词，抓取网上相关优质技术文章。</p>
+          <div id="materialList" class="material-list"></div>
+          <div class="material-more">
+            <button id="materialMoreBtn" class="hidden" type="button">加载更多</button>
+          </div>
+        </section>
       </aside>
 
       <section class="card editor">
