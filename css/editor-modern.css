@@ -192,6 +192,129 @@ button:hover {
   color: var(--muted);
 }
 
+.material-box {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed #cfd9e7;
+}
+
+.material-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 6px;
+}
+
+.material-tabs .seg {
+  flex: 1;
+  background: #f4f8fd;
+  font-size: 0.85rem;
+  padding: 7px 8px;
+}
+
+.material-tabs .seg.active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
+.material-tabs .seg #materialFavCount {
+  font-weight: 600;
+}
+
+.material-status {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 6px 0;
+  min-height: 18px;
+}
+
+.material-list {
+  max-height: 420px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.material-item {
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfdff;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.material-item:hover {
+  border-color: #b3c7e3;
+  box-shadow: 0 6px 16px rgba(20, 55, 88, 0.07);
+}
+
+.material-item .m-title {
+  display: block;
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.material-item .m-title:hover {
+  text-decoration: underline;
+}
+
+.material-item .m-meta {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.material-item .m-summary {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #41506a;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.material-item .m-summary.loading {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.material-more {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.material-more button {
+  width: 100%;
+}
+
+.material-more button.hidden {
+  display: none;
+}
+
+.material-item .m-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.material-item .m-actions button {
+  font-size: 0.78rem;
+  padding: 5px 9px;
+}
+
+.material-item .m-actions button.faved {
+  background: #fff3ee;
+  color: var(--warning);
+  border-color: #ffd3c2;
+}
+
 .editor {
   padding: 14px;
   position: relative;
