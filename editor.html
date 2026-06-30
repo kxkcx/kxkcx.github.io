@@ -3,140 +3,122 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>后台编译部署</title>
-  <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/editor.css">
+  <title>Markdown 发布台</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+SC:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+  <link rel="stylesheet" href="/css/editor-modern.css">
 </head>
 <body>
-  <div class="auth-shell" id="authShell">
-    <div class="auth-card">
-      <h1>后台登录</h1>
-      <p>默认不登录。输入账号后可进入编译部署页面。</p>
-      <label>账号
-        <input id="loginUser" type="text" placeholder="请输入账号" autocomplete="off" autocapitalize="off" spellcheck="false">
-      </label>
-      <label>密码
-        <input id="loginPass" type="password" placeholder="请输入密码" autocomplete="new-password">
-      </label>
-      <div class="actions">
-        <button id="loginBtn" type="button" class="primary">登录</button>
-      </div>
-      <p id="loginStatus" class="status">未登录</p>
+  <section id="loginShell" class="card auth">
+    <h1>Markdown 发布台</h1>
+    <p>后台写 Markdown，编译后即可部署。默认账号密码：coderkou / coderkou</p>
+    <label>账号
+      <input id="loginUser" type="text" placeholder="请输入账号" autocomplete="off">
+    </label>
+    <label>密码
+      <input id="loginPass" type="password" placeholder="请输入密码" autocomplete="off">
+    </label>
+    <div class="toolbar">
+      <button id="loginBtn" class="primary" type="button">登录</button>
+      <a href="/">返回首页</a>
     </div>
-  </div>
+    <p id="loginStatus" class="status"></p>
+  </section>
 
-  <div class="editor-shell" id="editorShell" style="display:none;">
-    <header class="editor-header card">
+  <div id="appShell" class="shell hidden">
+    <header class="topbar">
       <div>
-        <h1><a href="/" class="title-home-link">Markdown 发布台</a></h1>
-        <p>左侧管理文档，右侧编辑与预览。支持新建、编辑、删除现有 Markdown。</p>
+        <h1>Markdown 发布台</h1>
+        <p>统一数据源：posts.json + markdown 文件。支持增量部署与强制全量覆盖同步。</p>
       </div>
-      <div class="header-actions">
-        <button id="toggleSidebarBtn" type="button">展开侧边栏</button>
+      <div class="toolbar">
+        <a href="/" target="_blank" rel="noopener">访问前台</a>
         <button id="logoutBtn" type="button">退出登录</button>
       </div>
     </header>
 
-    <section class="card config-card">
-      <details id="githubConfigDetails">
-        <summary>GitHub 配置（点击展开）</summary>
-        <div class="grid two">
-          <label>Owner
-            <input id="owner" type="text" placeholder="例如: kxkcx">
+    <section class="grid">
+      <aside class="card sidebar">
+        <h2>文章列表</h2>
+        <label>搜索
+          <input id="searchInput" type="text" placeholder="标题或 slug">
+        </label>
+        <div class="toolbar">
+          <button id="newBtn" type="button">新建</button>
+          <button id="deleteBtn" class="danger" type="button">删除</button>
+        </div>
+        <div id="postList" class="post-list"></div>
+      </aside>
+
+      <section class="card editor">
+        <h2>编辑区</h2>
+        <div class="row two">
+          <label>标题
+            <input id="title" type="text" placeholder="例如：从 0 到 1 搭建博客系统">
           </label>
-          <label>Repo
-            <input id="repo" type="text" placeholder="例如: kxkcx.github.io">
+          <label>Slug
+            <input id="slug" type="text" placeholder="留空自动生成">
           </label>
-          <label>Branch
-            <input id="branch" type="text" value="master">
+        </div>
+
+        <div class="row three">
+          <label>发布日期
+            <input id="publishDate" type="date">
           </label>
+          <label>分类
+            <input id="category" type="text" placeholder="技术, 架构">
+          </label>
+          <label>标签
+            <input id="tags" type="text" placeholder="markdown, github-pages">
+          </label>
+        </div>
+
+        <label>摘要
+          <input id="excerpt" type="text" placeholder="留空则自动从正文提取">
+        </label>
+
+        <label>Markdown
+          <textarea id="markdown" placeholder="# 开始写作"></textarea>
+        </label>
+
+        <div class="editor-actions">
+          <button id="compileBtn" type="button">编译到内存数据库</button>
+          <button id="previewBtn" type="button">预览</button>
+        </div>
+
+        <div id="previewBody" class="preview"></div>
+
+        <section class="deploy-box">
+          <h2>部署到 GitHub</h2>
+          <div class="row three">
+            <label>Owner
+              <input id="owner" type="text" placeholder="kxkcx">
+            </label>
+            <label>Repo
+              <input id="repo" type="text" placeholder="kxkcx.github.io">
+            </label>
+            <label>Branch
+              <input id="branch" type="text" value="master">
+            </label>
+          </div>
           <label>Token
             <input id="token" type="password" placeholder="GitHub PAT (repo 权限)">
           </label>
-        </div>
-        <div class="actions">
-          <button id="tokenHelpBtn" type="button">获取 Token（官方）</button>
-          <button id="verifyTokenBtn" type="button">验证 Token</button>
-        </div>
-        <p class="tip">Token 仅保存在浏览器本地，不会发送到除 GitHub API 之外的地址。</p>
-      </details>
-    </section>
-
-    <section class="workspace-grid sidebar-collapsed" id="workspaceGrid">
-      <aside class="card left-pane">
-        <h2>Markdown 文档</h2>
-        <input id="docPath" type="text" class="hidden-input" aria-hidden="true" tabindex="-1">
-        <div class="tree-header">
-          <strong>目录树</strong>
-          <span id="selectedDir">当前目录: posts</span>
-        </div>
-        <div class="tree-toolbar">
-          <button id="refreshDocsBtn" type="button">刷新</button>
-        </div>
-        <p id="selectedNode" class="tree-selected">当前选中: 目录 posts</p>
-        <div id="docTree" class="doc-tree"></div>
-        <p id="docStatus" class="status">未加载文档列表。</p>
-
-        <div class="published-section">
-          <div class="tree-header published-header">
-            <strong>已发布博客管理</strong>
-            <span id="publishedCount">0 篇</span>
-          </div>
-          <div id="publishedDocList" class="published-doc-list"></div>
-          <p id="publishedStatus" class="status">未加载已发布博客。</p>
-        </div>
-      </aside>
-
-      <div class="right-pane">
-        <section class="editor-content card">
-          <h2>编辑区</h2>
-          <div class="grid two">
-            <label>标题
-              <input id="title" type="text" placeholder="文章标题">
-            </label>
-            <label>Slug
-              <input id="slug" type="text" placeholder="留空自动生成，例如 my-first-post">
-            </label>
-          </div>
-          <div class="grid three meta-grid">
-            <label>发布日期 / 归档
-              <input id="publishDate" type="date">
-            </label>
-            <label>分类
-              <input id="category" type="text" placeholder="例如 技术, 机器学习">
-            </label>
-            <label>标签
-              <input id="tags" type="text" placeholder="例如 推荐系统, 深度学习">
-            </label>
-          </div>
-          <label>Markdown
-            <textarea id="markdown" rows="18" placeholder="# 这里开始写作\n\n支持标准 Markdown。"></textarea>
+          <label>
+            <input id="forceSync" type="checkbox">
+            强制同步：全量覆盖远程（保留 images、.github、CNAME/readme）
           </label>
-          <div class="actions">
-            <button id="previewBtn" type="button">预览</button>
-            <button id="compileBtn" type="button">编译</button>
-            <button id="deployBtn" type="button" class="primary">部署</button>
+          <p class="tip">勾选强制同步后，会删除远程中不在当前发布清单里的旧页面文件，用于彻底对齐站点。</p>
+          <div class="toolbar">
+            <button id="deployBtn" class="primary" type="button">部署到 GitHub</button>
           </div>
-          <p id="status" class="status">等待操作...</p>
         </section>
 
-        <details class="preview card" id="previewPanel">
-          <summary>预览（默认折叠）</summary>
-          <article id="previewBody" class="article-entry"></article>
-        </details>
-      </div>
+        <p id="status" class="status">等待加载...</p>
+      </section>
     </section>
-  </div>
-
-  <div id="treeContextMenu" class="tree-context-menu" hidden>
-    <button id="contextCreateDocBtn" type="button">新建文件</button>
-    <button id="contextCreateDirBtn" type="button">新建目录</button>
-    <button id="contextSaveDocBtn" type="button">保存</button>
-    <button id="contextRenameDocBtn" type="button">重命名</button>
-    <button id="contextDeleteDocBtn" type="button">删除</button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="/js/editor.js"></script>
+  <script src="/js/editor-new.js"></script>
 </body>
 </html>
