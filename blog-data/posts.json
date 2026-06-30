@@ -1,5 +1,22 @@
 [
   {
+    "id": "功能演示",
+    "title": "博客功能演示",
+    "slug": "功能演示",
+    "publishedAt": "2026-06-30T00:00:00Z",
+    "archive": "2026/06",
+    "categories": [
+      "公告"
+    ],
+    "tags": [
+      "功能",
+      "代码运行"
+    ],
+    "excerpt": "演示目录、阅读时长、在线运行代码、暗色模式与全文搜索等新功能。",
+    "contentPath": "blog-data/posts/功能演示.md",
+    "updatedAt": "2026-06-30T00:00:00Z"
+  },
+  {
     "id": "2026-06-27",
     "title": "2026-06-27",
     "slug": "2026-06-27",
@@ -33,7 +50,7 @@
     "tags": [],
     "excerpt": "（迁移内容为空，请手动补充）",
     "contentPath": "blog-data/posts/spring-boot.md",
-    "updatedAt": "2026-06-30T15:31:43.222Z"
+    "updatedAt": "2026-06-30T16:15:49.036Z"
   },
   {
     "id": "git实战",
