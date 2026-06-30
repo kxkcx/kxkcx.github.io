@@ -6,11 +6,10 @@
   <title>coderkou | 博客</title>
   <meta name="description" content="一个可在线编译发布的 Markdown 博客站点。">
   <link rel="icon" href="/images/favicon-32x32-next.png">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+SC:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap">
   <link rel="stylesheet" href="/css/blog.css">
 </head>
 <body>
-  <div class="layout">
+  <div id="siteLayout" class="layout">
     <aside class="sidebar">
       <div class="sidebar-head">
         <img class="avatar" src="/images/avatar.gif" alt="avatar">
@@ -49,12 +48,19 @@
     </aside>
 
     <main class="content">
+      <div class="content-topbar">
+        <div class="content-eyebrow">Engineering Notes · Live Markdown Pipeline</div>
+        <div class="content-actions">
+          <button id="toggleSidebarBtn" type="button">收起侧栏</button>
+          <a class="editor-link" href="/editor.html">进入发布台</a>
+        </div>
+      </div>
       <div id="appRoot" class="empty">加载中...</div>
       <footer class="footer">© 2026 coderkou · Rebuilt with a live markdown pipeline</footer>
     </main>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="/js/vendor/marked.min.js"></script>
   <script src="/js/app.js"></script>
 </body>
 </html>
