@@ -9,15 +9,46 @@
   const categoryCloud = document.getElementById('categoryCloud');
   const siteLayout = document.getElementById('siteLayout');
   const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
 
   const LAYOUT_KEY = 'blog-front-layout-v1';
   const RUNTIME_KEY = 'blog-runtime-compiled-v1';
+  const THEME_KEY = 'blog-front-theme-v1';
 
   const state = {
     posts: [],
     contentCache: new Map(),
-    sidebarCollapsed: false
+    sidebarCollapsed: false,
+    theme: 'light'
   };
+
+  function applyTheme() {
+    const theme = state.theme === 'dark' ? 'dark' : 'light';
+    document.body.setAttribute('data-theme', theme);
+    if (themeToggleBtn) {
+      themeToggleBtn.textContent = theme === 'dark' ? '浅色模式' : '深色模式';
+      themeToggleBtn.setAttribute('aria-label', theme === 'dark' ? '切换到浅色模式' : '切换到深色模式');
+    }
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch (e) {}
+  }
+
+  function restoreTheme() {
+    try {
+      const cached = localStorage.getItem(THEME_KEY);
+      if (cached === 'dark' || cached === 'light') {
+        state.theme = cached;
+        return;
+      }
+    } catch (e) {}
+    state.theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function toggleTheme() {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    applyTheme();
+  }
 
   function readRuntimeSnapshot() {
     try {
@@ -278,7 +309,9 @@
 
   function boot() {
     restoreLayout();
+    restoreTheme();
     applyLayout();
+    applyTheme();
 
     const runtimeSnapshot = readRuntimeSnapshot();
     const hasRuntime = runtimeSnapshot ? applyRuntimeSnapshot(runtimeSnapshot) : false;
@@ -308,8 +341,15 @@
     if (toggleSidebarBtn) {
       toggleSidebarBtn.addEventListener('click', toggleSidebar);
     }
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', toggleTheme);
+    }
 
     window.addEventListener('storage', function (event) {
+      if (event.key === THEME_KEY) {
+        restoreTheme();
+        applyTheme();
+      }
       if (event.key !== RUNTIME_KEY) return;
       const snapshot = readRuntimeSnapshot();
       if (snapshot) {
